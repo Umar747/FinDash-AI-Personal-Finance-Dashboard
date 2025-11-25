@@ -1,0 +1,8 @@
+/__pycache__
+/.pytest_cache
+/data
+/tests/__pycache__
+.coverage
+commands.md
+test.py
+todo.md
