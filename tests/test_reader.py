@@ -7,7 +7,13 @@ import sys
 import os
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from reader import read_csv
+from reader import CSVReader
+
+# Create a CSVReader object for tests to read CSV files
+@pytest.fixture
+def reader():
+    reader = CSVReader()
+    return reader
 
 # Create a temporary directory for test files
 @pytest.fixture
@@ -39,14 +45,14 @@ def empty_csv_data():
     return ""
 
 # Basic Functionality - Does the function read a valid CSV correctly?
-def test_read_valid_csv(temp_dir, valid_csv_data):
+def test_read_valid_csv(reader, temp_dir, valid_csv_data):
     # Create a temporary CSV file
     filepath = os.path.join(temp_dir, "valid_dataset.csv")
     with open(filepath, 'w') as f:
         f.write(valid_csv_data)
     
     # Test the function
-    transactions, categories = read_csv(filepath)
+    transactions, categories = reader.read_dataset(filepath)
     
     # Check results
     assert isinstance(transactions, list)
@@ -57,23 +63,23 @@ def test_read_valid_csv(temp_dir, valid_csv_data):
     assert categories == ["Transport", "Food", "Entertainment", "Transport", "Food"]
 
 # Error Handling - Does it raise FileNotFoundError for non-existent files?
-def test_file_not_found():
+def test_file_not_found(reader):
     non_existent_file = "non_existent_directory/non_existent_file.csv"
     
     with pytest.raises(FileNotFoundError, match=f"Training data file not found: {non_existent_file}"):
-        read_csv(non_existent_file)
+        reader.read_dataset(non_existent_file)
 
 # Error Handling - Does it raise ValueError for missing 'transaction' column?
-def test_missing_transaction_column(temp_dir, missing_columns_csv_data):
+def test_missing_transaction_column(reader, temp_dir, missing_columns_csv_data):
     filepath = os.path.join(temp_dir, "missing_transaction.csv")
     with open(filepath, 'w') as f:
         f.write(missing_columns_csv_data)
     
     with pytest.raises(ValueError, match="CSV file must contain 'transaction' and 'category' columns"):
-        read_csv(filepath)
+        reader.read_dataset(filepath)
 
 # Error Handling - Does it raise ValueError for missing 'category' column?
-def test_missing_category_column(temp_dir):
+def test_missing_category_column(reader, temp_dir):
     # Create CSV with only transaction column
     csv_data = """transaction
 Uber ride
@@ -84,24 +90,24 @@ Supermarket"""
         f.write(csv_data)
     
     with pytest.raises(ValueError, match="CSV file must contain 'transaction' and 'category' columns"):
-        read_csv(filepath)
+        reader.read_dataset(filepath)
 
 # Error Handling - Does it handle empty CSV files?
-def test_empty_csv_file(temp_dir, empty_csv_data):
+def test_empty_csv_file(reader, temp_dir, empty_csv_data):
     filepath = os.path.join(temp_dir, "empty_dataset.csv")
     with open(filepath, 'w') as f:
         f.write(empty_csv_data)
     
-    with pytest.raises(ValueError, match="CSV file must contain 'transaction' and 'category' columns"):
-        read_csv(filepath)
+    with pytest.raises(ValueError, match="CSV file cannot be empty and must contain 'transaction' and 'category' columns"):
+        reader.read_dataset(filepath)
 
 # Data Types - Does it return correct data types?
-def test_return_data_types(temp_dir, valid_csv_data):
+def test_return_data_types(reader, temp_dir, valid_csv_data):
     filepath = os.path.join(temp_dir, "test_types.csv")
     with open(filepath, 'w') as f:
         f.write(valid_csv_data)
     
-    transactions, categories = read_csv(filepath)
+    transactions, categories = reader.read_dataset(filepath)
     
     assert isinstance(transactions, list)
     assert isinstance(categories, list)
@@ -109,7 +115,7 @@ def test_return_data_types(temp_dir, valid_csv_data):
     assert all(isinstance(item, str) for item in categories)
 
 # Column Order - Does it work regardless of column order?
-def test_different_column_order(temp_dir):
+def test_different_column_order(reader, temp_dir):
     # CSV with columns in different order
     csv_data = """category,transaction
 Transport,Uber ride
@@ -120,13 +126,13 @@ Entertainment,Netflix"""
     with open(filepath, 'w') as f:
         f.write(csv_data)
     
-    transactions, categories = read_csv(filepath)
+    transactions, categories = reader.read_dataset(filepath)
     
     assert transactions == ["Uber ride", "Supermarket", "Netflix"]
     assert categories == ["Transport", "Food", "Entertainment"]
 
 # Large Dataset - Does it handle larger datasets correctly?
-def test_large_dataset(temp_dir):
+def test_large_dataset(reader, temp_dir):
     # Create a larger dataset
     transactions_data = []
     categories_data = []
@@ -143,7 +149,7 @@ def test_large_dataset(temp_dir):
     with open(filepath, 'w') as f:
         f.write(csv_content)
     
-    transactions, categories = read_csv(filepath)
+    transactions, categories = reader.read_dataset(filepath)
     
     assert len(transactions) == 100
     assert len(categories) == 100
@@ -151,7 +157,7 @@ def test_large_dataset(temp_dir):
     assert categories[0] == "Category 0"
 
 # Special Characters - Does it handle special characters in data?
-def test_special_characters(temp_dir):
+def test_special_characters(reader, temp_dir):
     csv_data = '''transaction,category
 "McDonald's, Inc.",Food
 "Café & Restaurant",Food
@@ -162,7 +168,7 @@ Gas $ Station,Transport'''
     with open(filepath, 'w') as f:
         f.write(csv_data)
     
-    transactions, categories = read_csv(filepath)
+    transactions, categories = reader.read_dataset(filepath)
     
     assert len(transactions) == 4
     assert len(categories) == 4
@@ -170,7 +176,7 @@ Gas $ Station,Transport'''
     assert "Café & Restaurant" in transactions
 
 # Whitespace Handling - Does it handle leading/trailing whitespace?
-def test_whitespace_handling(temp_dir):
+def test_whitespace_handling(reader, temp_dir):
     csv_data = """transaction,category
   Uber ride  ,  Transport  
 Supermarket  ,Food
@@ -180,13 +186,13 @@ Supermarket  ,Food
     with open(filepath, 'w') as f:
         f.write(csv_data)
     
-    transactions, categories = read_csv(filepath)
+    transactions, categories = reader.read_dataset(filepath)
     
     assert transactions == ["  Uber ride  ", "Supermarket  ", "  Netflix"]
     assert categories == ["  Transport  ", "Food", "Entertainment  "]
 
 # Empty Values - Does it handle empty values in the data?
-def test_empty_values(temp_dir):
+def test_empty_values(reader, temp_dir):
     csv_data = """transaction,category
 Uber ride,Transport
 ,Food
@@ -196,7 +202,7 @@ Netflix,"""
     with open(filepath, 'w') as f:
         f.write(csv_data)
     
-    transactions, categories = read_csv(filepath)
+    transactions, categories = reader.read_dataset(filepath)
     
     assert len(transactions) == 3
     assert len(categories) == 3
@@ -205,7 +211,7 @@ Netflix,"""
     assert categories[2] == ""  # Empty category
 
 # Case Sensitivity - Is the column name check case-sensitive?
-def test_case_sensitive_columns(temp_dir):
+def test_case_sensitive_columns(reader, temp_dir):
     # CSV with uppercase columns
     csv_data = """Transaction,Category
 Uber ride,Transport
@@ -216,15 +222,15 @@ Supermarket,Food"""
         f.write(csv_data)
     
     with pytest.raises(ValueError, match="CSV file must contain 'transaction' and 'category' columns"):
-        read_csv(filepath)
+        reader.read_dataset(filepath)
 
 # Return Value Structure - Does it return exactly two lists?
-def test_return_structure(temp_dir, valid_csv_data):
+def test_return_structure(reader, temp_dir, valid_csv_data):
     filepath = os.path.join(temp_dir, "structure_test.csv")
     with open(filepath, 'w') as f:
         f.write(valid_csv_data)
     
-    result = read_csv(filepath)
+    result = reader.read_dataset(filepath)
     
     assert isinstance(result, tuple)
     assert len(result) == 2

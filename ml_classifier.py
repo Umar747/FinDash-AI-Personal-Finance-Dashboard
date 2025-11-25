@@ -14,7 +14,7 @@ import joblib  # For saving/loading trained models
 import os
 
 from main import NLPDataProcessor
-from reader import read_csv
+from reader import CSVReader
 
 class FinancialTransactionClassifier:
     """
@@ -384,8 +384,9 @@ class FinancialTransactionClassifier:
 
 # model = FinancialTransactionClassifier()
 # nlp = NLPDataProcessor()
+reader = CSVReader()
 # # print(type(nlp.transform_embeddings(["Cafe Nero Coffee Chrg"])[0]))
-# transactions, categories = read_csv("data/dataset.csv")
+# transactions, categories = reader.read_dataset("data/dataset.csv")
 # features = nlp.transform_embeddings(transactions)
 # model.train(features, categories)
 

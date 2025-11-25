@@ -55,29 +55,9 @@ class CSVReader:
 
 
 
-# EVENTUALLY CHANGE CODE TO USE CSV READER!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-def read_csv(filepath: str) -> str:
-        # Raise an error if the file does not exist
-        if not os.path.exists(filepath):
-            raise FileNotFoundError(f"Training data file not found: {filepath}")
-        
-        try:
-            df = pd.read_csv(filepath, keep_default_na=False)
-        except pd.errors.EmptyDataError:
-            raise ValueError("CSV file must contain 'transaction' and 'category' columns")
-        
-        # Raise an error if the CSV file is not in the correct format
-        if "transaction" not in df.columns or "category" not in df.columns:
-            raise ValueError("CSV file must contain 'transaction' and 'category' columns")
-
-        transactions = df["transaction"].tolist()
-        category = df["category"].tolist()
-
-        return transactions, category
-
-reader = CSVReader()
-filepath = "data/dataset.csv"
+# reader = CSVReader()
+# filepath = "data/dataset.csv"
 
 # transactions, categories = reader.read_dataset(filepath)
 # print(transactions)
