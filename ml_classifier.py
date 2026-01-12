@@ -383,12 +383,14 @@ class FinancialTransactionClassifier:
         }
 
 # model = FinancialTransactionClassifier()
+# model.load_model("/Users/umarali/Library/CloudStorage/OneDrive-UniversityCollegeLondon/Third Year/Final Year Project/Personal-Finance-Dashboard/transaction_classifier.joblib")
 # nlp = NLPDataProcessor()
-reader = CSVReader()
+# reader = CSVReader()
 # # print(type(nlp.transform_embeddings(["Cafe Nero Coffee Chrg"])[0]))
 # transactions, categories = reader.read_dataset("data/dataset.csv")
 # features = nlp.transform_embeddings(transactions)
 # model.train(features, categories)
+# # model.save_model("/Users/umarali/Library/CloudStorage/OneDrive-UniversityCollegeLondon/Third Year/Final Year Project/Personal-Finance-Dashboard/transaction_classifier")
 
 # print(model.predict_single(nlp.transform_embeddings(["Costa Coffee Credit"])[0]))
 # print(model.predict_single(nlp.transform_embeddings(["Cineworld Superman Viewing"])[0]))

@@ -2,7 +2,10 @@
 /.pytest_cache
 /data
 /tests/__pycache__
+/templates
 .coverage
+transaction_classifier.joblib
 commands.md
 test.py
 todo.md
+.env
