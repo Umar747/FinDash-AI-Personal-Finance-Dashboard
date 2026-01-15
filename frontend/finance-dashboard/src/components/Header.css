@@ -27,6 +27,7 @@
   gap: 1rem;
 }
 
+/* src/components/Header.css - Update for links */
 .nav-btn {
   background: rgba(255, 255, 255, 0.2);
   border: none;
@@ -36,6 +37,8 @@
   cursor: pointer;
   font-weight: 500;
   transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-block;
 }
 
 .nav-btn:hover {

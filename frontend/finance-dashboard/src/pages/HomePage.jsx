@@ -1,5 +1,6 @@
 // src/pages/HomePage.jsx
 import React from 'react';
+import { FaUpload } from 'react-icons/fa';
 import './HomePage.css';
 
 const HomePage = () => {
@@ -20,7 +21,7 @@ const HomePage = () => {
             📁 Upload Statement (Next Step)
           </button> */}
           <button className="primary-btn">
-            Upload Statement
+            <FaUpload /> Upload Statement
           </button>
           <button className="secondary-btn">
             Go to Analytics (Next Step)
