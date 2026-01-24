@@ -31,13 +31,13 @@ class CSVReader:
 
         return transactions, category
     
-    def read_statement(self, filepath: str) -> str:
+    def read_statement(self, filepath: str, encoding: str = 'utf-8') -> str:
         # Raise an error if the file does not exist
         if not os.path.exists(filepath):
             raise FileNotFoundError(f"Bank statement file not found: {filepath}")
         
         try:
-            df = pd.read_csv(filepath, usecols=["Date", "Name", "Amount"])
+            df = pd.read_csv(filepath, usecols=["Date", "Name", "Amount"], encoding=encoding)
         # Raise an error if the CSV file is empty
         except pd.errors.EmptyDataError:
             raise ValueError("CSV file cannot be empty and must contain 'Date', 'Name' and 'Amount' columns")
@@ -45,8 +45,20 @@ class CSVReader:
         except ValueError as e:
             if "Usecols do not match columns" in str(e):
                 raise ValueError("CSV file must contain 'Date', 'Name' and 'Amount' columns")
+            
+        try:
+            df["Date"] = (pd.to_datetime(df["Date"].str.strip(), format="mixed", dayfirst=True, errors="raise").dt.strftime("%Y-%m-%d"))
+        except Exception:
+            raise ValueError("Date column must be in DD/MM/YYYY format or YYYY-MM-DD format")
+        
+        data = {}
 
-        return df
+        for column in df.columns:
+            data.update({
+                column: df[column].tolist()
+            })
+
+        return data
 
 
 
@@ -58,15 +70,14 @@ class CSVReader:
 
 # reader = CSVReader()
 # filepath = "data/dataset.csv"
-
 # transactions, categories = reader.read_dataset(filepath)
 # print(transactions)
 # print(categories)
 
-# data = reader.read_statement("data/Sample_Statement.csv")
-# data = reader.read_statement("data/statement.csv")
+# reader = CSVReader()
 # data = reader.read_statement("data/statement.csv")
 # print(data)
+# print(f"One example of the date is {data['Date'][0]}")
 # print(len(data))
 # for record in data["Name"]:
 #     print(record)

@@ -11,7 +11,7 @@ psycopg2-binary==2.9.11
 
 # NLP Libraries
 nltk==3.8.1
-spacy==3.7.2
+spacy==3.8.0
 
 # Advanced NLP (Transformers)
 transformers==4.33.3

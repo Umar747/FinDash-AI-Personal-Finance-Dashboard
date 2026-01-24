@@ -1,5 +1,5 @@
 // src/components/CsvUploader.jsx
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { transactionsAPI } from '../services/api';
 import { FaDownload, FaUpload, FaFolderOpen } from "react-icons/fa";
 import './CsvUploader.css';
@@ -7,9 +7,9 @@ import './CsvUploader.css';
 const CsvUploader = ({ onUploadSuccess }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const fileInputRef = useRef(null);
 
   const handleDragOver = (e) => {
     e.preventDefault();
@@ -54,54 +54,30 @@ const CsvUploader = ({ onUploadSuccess }) => {
     setIsUploading(true);
     setError('');
     setSuccess('');
-    setUploadProgress(0);
 
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('csvFile', file);
 
     try {
-      // Simulate progress for demonstration
-      const progressInterval = setInterval(() => {
-        setUploadProgress(prev => {
-          if (prev >= 90) {
-            clearInterval(progressInterval);
-            return 90;
-          }
-          return prev + 10;
-        });
-      }, 200);
+      const response = await transactionsAPI.uploadCSV(formData);
 
-      // For now, simulate API call (replace with actual when backend is ready)
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      setSuccess(`Successfully uploaded ${response.data.transactions} transactions`);
+      onUploadSuccess();
       
-      clearInterval(progressInterval);
-      setUploadProgress(100);
-
-      // Uncomment when backend is ready:
-      // const response = await transactionsAPI.uploadCSV(formData);
-      
-      // For now, use mock response
-      const mockResponse = {
-        data: {
-          message: 'File uploaded successfully',
-          transactions: 45,
-          processed: true,
-        }
-      };
-
-      setSuccess(`Successfully uploaded ${mockResponse.data.transactions} transactions`);
-    //   onUploadSuccess(mockResponse.data.transactions);
-      
-      // Reset after 5 seconds
+      // Remove success message after 5 seconds
       setTimeout(() => {
         setSuccess('');
-        setUploadProgress(0);
       }, 5000);
 
     } catch (err) {
       setError(err.response?.data?.message || 'Upload failed. Please try again.');
+      console.log(err.message)
     } finally {
       setIsUploading(false);
+
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
@@ -109,8 +85,7 @@ const CsvUploader = ({ onUploadSuccess }) => {
     <div className="csv-uploader-container">
       <h3>Upload Bank Statement (CSV)</h3>
       <p className="upload-description">
-        Upload your bank statement in CSV format. The system will automatically 
-        categorize transactions using AI and add them to your dashboard.
+        Upload your bank statement in CSV format. The system will automatically categorise transactions using AI and add them to your dashboard.
       </p>
 
       <div
@@ -121,6 +96,7 @@ const CsvUploader = ({ onUploadSuccess }) => {
         onClick={() => !isUploading && document.getElementById('file-input').click()}
       >
         <input
+          ref={fileInputRef}
           id="file-input"
           type="file"
           accept=".csv"
@@ -133,13 +109,8 @@ const CsvUploader = ({ onUploadSuccess }) => {
           {isUploading ? (
             <>
               <div className="upload-icon"><FaUpload /></div>
-              <p>Uploading... {uploadProgress}%</p>
-              <div className="progress-bar">
-                <div 
-                  className="progress-fill" 
-                  style={{ width: `${uploadProgress}%` }}
-                ></div>
-              </div>
+              <p>Uploading your CSV…</p>
+              <div className="spinner" />
             </>
           ) : (
             <>
@@ -174,7 +145,7 @@ const CsvUploader = ({ onUploadSuccess }) => {
           <li>Required columns: <code>Date</code>, <code>Description</code>, <code>Amount</code></li>
           <li>Date format: <code>YYYY-MM-DD</code> or <code>DD/MM/YYYY</code></li>
           <li>Amount format: Positive for credits, negative for debits</li>
-          <li><a href="/sample.csv" download="sample-statement.csv"><FaDownload /> Download sample CSV</a></li>
+          <li><a href="sample-statement.csv" download><FaDownload /> Download sample CSV</a></li>
         </ul>
       </div>
     </div>

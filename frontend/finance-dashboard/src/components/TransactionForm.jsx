@@ -2,15 +2,21 @@
 import React, { useState } from 'react';
 import './TransactionForm.css';
 
-const TransactionForm = ({ onSubmit, categories = [] }) => {
+// Maybe use the categories stuff commented out in a future version, so user can enter category themselves if they want
+// const TransactionForm = ({ onSubmit, categories = [] }) => {
+const TransactionForm = ({ onSubmit }) => {
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     description: '',
     amount: '',
-    category: '',
-    account: 'HSBC Current',
-    type: 'debit',
+    // category: '',
+    account: 'HSBC Current Account',
   });
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -20,32 +26,39 @@ const TransactionForm = ({ onSubmit, categories = [] }) => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    const transaction = {
-      ...formData,
-      amount: formData.type === 'debit' ? -Math.abs(parseFloat(formData.amount)) : Math.abs(parseFloat(formData.amount)),
-    };
-    
-    onSubmit(transaction);
-    
-    // Reset form
-    setFormData({
-      date: new Date().toISOString().split('T')[0],
-      description: '',
-      amount: '',
-      category: '',
-      account: 'HSBC Current',
-      type: 'debit',
-    });
+    setError('');
+    setLoading(true);
+
+    try {
+      if (onSubmit) {
+        await onSubmit(formData);
+      }
+
+      // Reset form
+      setFormData({
+        date: new Date().toISOString().split('T')[0],
+        description: '',
+        amount: '',
+        // category: '',
+        account: 'HSBC Current Account',
+      });
+
+      // Show success message
+      setSuccess('Transaction added successfully!');
+      setTimeout(() => setSuccess(''), 5000);
+    } catch (err) {
+      console.error(err);
+      setError(err.message || 'Failed to create transaction');
+    } finally {
+      // Remove success message after 5 seconds
+      setLoading(false);
+    }
   };
 
-  const defaultCategories = [
-    'Income', 'Shopping', 'Groceries', 'Transport', 
-    'Entertainment', 'Food & Dining', 'Health & Fitness', 
-    'Bills', 'Education', 'Other'
-  ];
+  // const defaultCategories = ['Income', 'Shopping', 'Groceries', 'Transport', 'Entertainment', 'Food & Dining', 'Health & Fitness', 'Bills', 'Education', 'Other'];
+  // const allCategories = Array.from(new Set([...categories, ...defaultCategories]));
 
   return (
     <div className="transaction-form-container">
@@ -62,19 +75,6 @@ const TransactionForm = ({ onSubmit, categories = [] }) => {
               required
             />
           </div>
-          
-          <div className="form-group">
-            <label>Type</label>
-            <select
-              name="type"
-              value={formData.type}
-              onChange={handleChange}
-              className="type-select"
-            >
-              <option value="debit">Expense (-)</option>
-              <option value="credit">Income (+)</option>
-            </select>
-          </div>
         </div>
 
         <div className="form-group">
@@ -84,7 +84,7 @@ const TransactionForm = ({ onSubmit, categories = [] }) => {
             name="description"
             value={formData.description}
             onChange={handleChange}
-            placeholder="e.g., Tesco Supermarket, Salary Deposit"
+            placeholder="e.g. Tesco Supermarket, Salary Deposit"
             required
           />
         </div>
@@ -97,14 +97,13 @@ const TransactionForm = ({ onSubmit, categories = [] }) => {
               name="amount"
               value={formData.amount}
               onChange={handleChange}
-              min="0"
               step="0.01"
               placeholder="0.00"
               required
             />
           </div>
 
-          <div className="form-group">
+          {/* <div className="form-group">
             <label>Category</label>
             <select
               name="category"
@@ -113,11 +112,11 @@ const TransactionForm = ({ onSubmit, categories = [] }) => {
               required
             >
               <option value="">Select a category</option>
-              {(categories.length > 0 ? categories : defaultCategories).map(category => (
+              {allCategories.map(category => (
                 <option key={category} value={category}>{category}</option>
               ))}
             </select>
-          </div>
+          </div> */}
         </div>
 
         <div className="form-group">
@@ -132,9 +131,12 @@ const TransactionForm = ({ onSubmit, categories = [] }) => {
           />
         </div>
 
-        <button type="submit" className="submit-btn">
-          + Add Transaction
+        <button type="submit" className="submit-btn" disabled={loading}>
+          {loading ? 'Adding...' : '+ Add Transaction'}
         </button>
+
+        {success && <p className="success-text">{success}</p>}
+        {error && <p className="error-text">{error}</p>}
       </form>
     </div>
   );

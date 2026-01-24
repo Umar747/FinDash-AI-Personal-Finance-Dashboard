@@ -4,6 +4,7 @@
 /tests/__pycache__
 /templates
 .coverage
+saved_commands.sql
 transaction_classifier.joblib
 commands.md
 test.py

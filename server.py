@@ -53,7 +53,117 @@ def index():
     """Serve the HTML upload page"""
     return render_template('test.html')  # If using templates folder
 
-@app.route('/upload', methods=['POST'])
+
+
+@app.route('/transactions', methods=['GET'])
+def get_all_transactions():
+    """Handle retrieving transactions database and returning"""
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT t.id, t.transaction_date, t.transaction_name, t.amount, t.category, a.account_name FROM transactions t INNER JOIN accounts a ON t.account_id = a.id WHERE t.user_id = 1;")
+        transactions = cur.fetchall()
+
+        if not transactions:
+            return jsonify({'error': 'Transactions not found'}), 404
+        
+        res_transactions = []
+        for transaction in transactions:
+            res_transactions.append({
+                "id": transaction[0],
+                "date": str(transaction[1]),
+                "description": transaction[2],
+                "amount": transaction[3],
+                "category": transaction[4],
+                "account": transaction[5]
+            })
+        
+        return jsonify({
+            'transactions': res_transactions
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
+
+
+
+@app.route('/transactions/<int:transaction_id>', methods=['GET'])
+def get_transaction(transaction_id):
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT t.id, t.transaction_date, t.transaction_name, t.amount, t.category, a.account_name FROM transactions t JOIN accounts a ON t.account_id = a.id WHERE t.id = %s AND t.user_id = %s", (transaction_id, 1))
+        transaction = cur.fetchone()
+
+        if not transaction:
+            return jsonify({'error': 'Transaction not found'}), 404
+
+        return jsonify({
+            "id": transaction[0],
+            "date": str(transaction[1]),
+            "description": transaction[2],
+            "amount": (transaction[3]),
+            "category": transaction[4],
+            "account": transaction[5]
+        })
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
+
+
+
+@app.route('/transactions', methods=['POST'])
+def create_transaction():
+    data = request.get_json()
+
+    required_fields = [
+        'account',
+        'description',
+        'amount',
+        'date',
+    ]
+
+    if not all(field in data for field in required_fields):
+        return jsonify({'error': 'Missing required fields'}), 400
+
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        # Get account_id
+        cur.execute("SELECT id FROM accounts WHERE user_id = %s AND account_name = %s", (1, data['account']))
+
+        account = cur.fetchone()
+        if not account:
+            return jsonify({'error': 'Account not found'}), 404
+
+        account_id = account[0]
+
+        cur.execute("INSERT INTO transactions (user_id, account_id, transaction_name, amount, transaction_date, category) VALUES (%s, %s, %s, %s, %s, %s) RETURNING id", (1, account_id, data['description'], data['amount'], data['date'], model.predict_single(nlp.transform_embeddings([data['description']])[0]).get("predicted_category")))
+
+        transaction_id = cur.fetchone()[0]
+        conn.commit()
+
+        return jsonify({
+            'message': 'Transaction created',
+            'transaction_id': transaction_id
+        }), 201
+
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
+
+
+
+@app.route('/transactions/upload', methods=['POST'])
 def upload_csv():
     """Handle CSV file upload and return column names"""
     # Check if file was uploaded
@@ -79,36 +189,20 @@ def upload_csv():
         try:
             # Try different encodings if needed
             try:
-                df = pd.read_csv(temp_path)
+                data = reader.read_statement(temp_path)
             except UnicodeDecodeError:
-                df = pd.read_csv(temp_path, encoding='latin-1')
-            
-            print(df["Name"])
-            for name in df['Name']:
-                print(f'The category for the shop {name} is {model.predict_single(nlp.transform_embeddings([name])[0]).get("predicted_category")}')
-            
-            # Get column names
-            columns = df.columns.tolist()
-            
-            # Get basic info
-            num_rows = len(df)
-            num_columns = len(columns)
-            
+                data = reader.read_statement(temp_path, encoding='latin-1')
+            except ValueError as e:
+                if str(e) == "Date column must be in DD/MM/YYYY format or YYYY-MM-DD format":
+                    return jsonify({'error': str(e)}), 400
+
+            num_rows = len(data["Date"])
+
             # Clean up: remove temp file
             try:
                 os.remove(temp_path)
             except:
-                pass  # Ignore cleanup errors
-            
-            # Return success response with column information
-            return jsonify({
-                'message': f'File uploaded successfully! Found {num_rows} rows and {num_columns} columns.',
-                'filename': file.filename,
-                'columns': columns,
-                'num_rows': num_rows,
-                'num_columns': num_columns,
-                'sample_data': df.head(3).to_dict(orient='records') if num_rows > 0 else []
-            })
+                pass  # Ignore cleanup errors            
             
         except pd.errors.EmptyDataError:
             return jsonify({'error': 'The CSV file is empty'}), 400
@@ -117,26 +211,98 @@ def upload_csv():
             
     except Exception as e:
         return jsonify({'error': f'Upload failed: {str(e)}'}), 500
+    
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
 
-# @app.route('/api/info', methods=['GET'])
-# def get_csv_info():
-#     """Example API endpoint to demonstrate pandas usage"""
-#     # You can modify this to read from a specific file
-#     try:
-#         # Example: reading from a sample file
-#         df = pd.DataFrame({
-#             'Name': ['Alice', 'Bob', 'Charlie'],
-#             'Age': [25, 30, 35],
-#             'City': ['New York', 'London', 'Tokyo']
-#         })
-        
-#         return jsonify({
-#             'columns': df.columns.tolist(),
-#             'data': df.to_dict(orient='records'),
-#             'shape': df.shape
-#         })
-#     except Exception as e:
-#         return jsonify({'error': str(e)}), 500
+        # # Get account_id
+        # cur.execute("SELECT id FROM accounts WHERE user_id = %s AND account_name = %s", (1, data['account']))
+
+        # account = cur.fetchone()
+        # if not account:
+        #     return jsonify({'error': 'Account not found'}), 404
+
+        # account_id = account[0]
+
+        for row_num in range(num_rows):
+            print(f'{data["Name"][row_num]} has an amount of {data["Amount"][row_num]} and a date of {data["Date"][row_num]}')
+            cur.execute("INSERT INTO transactions (user_id, account_id, transaction_name, amount, transaction_date, category) VALUES (%s, %s, %s, %s, %s, %s) RETURNING id", (1, 1, data['Name'][row_num], data['Amount'][row_num], data['Date'][row_num], model.predict_single(nlp.transform_embeddings([data['Name'][row_num]])[0]).get("predicted_category")))
+
+        transaction_id = cur.fetchone()[0]
+        conn.commit()
+
+        return jsonify({
+            'message': 'File uploaded successfully',
+            'transactions': num_rows,
+            'transaction_id': transaction_id
+        }), 201
+
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
+
+
+
+@app.route('/transactions/<int:transaction_id>', methods=['DELETE'])
+def delete_transaction(transaction_id):
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute("DELETE FROM transactions WHERE id = %s AND user_id = %s", (transaction_id, 1))
+
+        if cur.rowcount == 0:
+            return jsonify({'error': 'Transaction not found'}), 404
+
+        conn.commit()
+
+        return jsonify({'message': 'Transaction deleted'})
+
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
+
+
+
+@app.route('/transactions/delete-multiple', methods=['POST'])
+def delete_transactions_multiple():
+    data = request.get_json()
+    ids = data.get('ids')
+
+    if not ids or not isinstance(ids, list):
+        return jsonify({'error': 'ids must be a non-empty list'}), 400
+
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute("DELETE FROM transactions WHERE user_id = %s AND id = ANY(%s)", (1, ids))
+
+        deleted_count = cur.rowcount
+        conn.commit()
+
+        return jsonify({
+            'message': 'Transactions deleted successfully',
+            'deleted_count': deleted_count,
+            'deleted_ids': ids
+        })
+
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
+
+
+
 
 # if __name__ == '__main__':
 #     # Create upload folder if it doesn't exist

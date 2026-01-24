@@ -82,3 +82,13 @@
 .submit-btn:hover {
   transform: translateY(-2px);
 }
+
+.success-text {
+  color: green;
+  margin-top: 5px;
+}
+
+.error-text {
+  color: red;
+  margin-top: 5px;
+}

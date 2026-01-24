@@ -382,15 +382,31 @@ class FinancialTransactionClassifier:
             'classes': self.label_encoder.classes_.tolist() if hasattr(self.label_encoder, 'classes_') else []
         }
 
+# Load a model
+
 # model = FinancialTransactionClassifier()
 # model.load_model("/Users/umarali/Library/CloudStorage/OneDrive-UniversityCollegeLondon/Third Year/Final Year Project/Personal-Finance-Dashboard/transaction_classifier.joblib")
 # nlp = NLPDataProcessor()
 # reader = CSVReader()
-# # print(type(nlp.transform_embeddings(["Cafe Nero Coffee Chrg"])[0]))
+
+# Save a Model
+
+# model = FinancialTransactionClassifier()
+# nlp = NLPDataProcessor()
+# reader = CSVReader()
 # transactions, categories = reader.read_dataset("data/dataset.csv")
 # features = nlp.transform_embeddings(transactions)
 # model.train(features, categories)
-# # model.save_model("/Users/umarali/Library/CloudStorage/OneDrive-UniversityCollegeLondon/Third Year/Final Year Project/Personal-Finance-Dashboard/transaction_classifier")
+# model.save_model("/Users/umarali/Library/CloudStorage/OneDrive-UniversityCollegeLondon/Third Year/Final Year Project/Personal-Finance-Dashboard/transaction_classifier")
+
+# Train a Model
+
+# model = FinancialTransactionClassifier()
+# nlp = NLPDataProcessor()
+# reader = CSVReader()
+# transactions, categories = reader.read_dataset("data/dataset.csv")
+# features = nlp.transform_embeddings(transactions)
+# model.train(features, categories)
 
 # print(model.predict_single(nlp.transform_embeddings(["Costa Coffee Credit"])[0]))
 # print(model.predict_single(nlp.transform_embeddings(["Cineworld Superman Viewing"])[0]))

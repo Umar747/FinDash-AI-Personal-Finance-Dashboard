@@ -3,11 +3,11 @@ import React, { useState, useEffect } from 'react';
 import TransactionForm from '../components/TransactionForm';
 import TransactionTable from '../components/TransactionTable';
 import CsvUploader from '../components/CsvUploader';
-import { transactionsAPI, mockTransactions } from '../services/api';
+import { transactionsAPI } from '../services/api';
 import './Transactions.css';
 
 const Transactions = () => {
-  const [transactions, setTransactions] = useState(mockTransactions);
+  const [transactions, setTransactions] = useState([]);
   const [selectedRows, setSelectedRows] = useState([]);
   const [filters, setFilters] = useState({
     startDate: '',
@@ -16,70 +16,57 @@ const Transactions = () => {
     search: '',
   });
 
-  // Initialize with mock data
+  const fetchTransactions = async () => {
+    try {
+      const response = await transactionsAPI.getAll();
+      setTransactions(response.data.transactions);
+    } catch (error) {
+      console.error('Error fetching transactions:', error);
+    }
+  };
+
+  // Get all transactions on initial load
   useEffect(() => {
-    // When backend is ready, replace with:
-    // const fetchTransactions = async () => {
-    //   try {
-    //     const response = await transactionsAPI.getAll(filters);
-    //     setTransactions(response.data);
-    //   } catch (error) {
-    //     console.error('Error fetching transactions:', error);
-    //   }
-    // };
-    // fetchTransactions();
-  }, [filters]);
+    fetchTransactions();
+  }, []);
 
   const handleAddTransaction = async (transactionData) => {
     try {
-      // When backend is ready:
-      // const response = await transactionsAPI.create(transactionData);
-      // setTransactions(prev => [response.data, ...prev]);
-      
-      // For now, simulate API call
-      const newTransaction = {
-        ...transactionData,
-        id: Date.now(), // Generate unique ID
-      };
-      
-      setTransactions(prev => [newTransaction, ...prev]);
-      
-      alert('Transaction added successfully!');
+      await transactionsAPI.create(transactionData);
+      await fetchTransactions(); // refresh table
     } catch (error) {
       console.error('Error adding transaction:', error);
-      alert('Failed to add transaction');
+      throw new Error()
     }
   };
 
   const handleDeleteTransaction = async (id) => {
     try {
-      // When backend is ready:
-      // await transactionsAPI.delete(id);
-      
-      setTransactions(prev => prev.filter(t => t.id !== id));
-      alert('Transaction deleted successfully!');
+      await transactionsAPI.delete(id);
+      await fetchTransactions(); // refresh table
     } catch (error) {
-      console.error('Error deleting transaction:', error);
+      console.error(error);
       alert('Failed to delete transaction');
     }
   };
 
   const handleDeleteMultiple = async (ids) => {
     try {
-      // When backend is ready:
-      // await transactionsAPI.deleteMultiple(ids);
-      
-      setTransactions(prev => prev.filter(t => !ids.includes(t.id)));
-      alert(`${ids.length} transactions deleted successfully!`);
+      await transactionsAPI.deleteMultiple(ids);
+      await fetchTransactions(); // refresh table
     } catch (error) {
-      console.error('Error deleting transactions:', error);
+      console.error(error);
       alert('Failed to delete transactions');
     }
   };
 
-  const handleUploadSuccess = (transactionCount) => {
-    // Refresh transactions after upload
-    alert(`Successfully processed ${transactionCount} transactions from CSV!`);
+  const handleUploadSuccess = async () => {
+    try {
+      await fetchTransactions(); // refresh table
+    } catch (error) {
+      console.error(error);
+      alert('Failed to retrieve new transactions');
+    }
   };
 
   const handleFilterChange = (e) => {
@@ -99,7 +86,7 @@ const Transactions = () => {
     });
   };
 
-  // Get unique categories for filter dropdown
+  // Get categories for filter dropdown
   const categories = [...new Set(transactions.map(t => t.category))].sort();
 
   return (
@@ -128,8 +115,8 @@ const Transactions = () => {
               <div className="stat">
                 <div className="stat-value">
                   £{transactions
-                    .filter(t => t.amount > 0)
-                    .reduce((sum, t) => sum + t.amount, 0)
+                    .filter(t => parseFloat(t.amount) > 0)
+                    .reduce((sum, t) => sum + parseFloat(t.amount), 0)
                     .toFixed(2)}
                 </div>
                 <div className="stat-label">Total Income</div>
@@ -137,8 +124,8 @@ const Transactions = () => {
               <div className="stat">
                 <div className="stat-value">
                   £{Math.abs(transactions
-                    .filter(t => t.amount < 0)
-                    .reduce((sum, t) => sum + t.amount, 0))
+                    .filter(t => parseFloat(t.amount) < 0)
+                    .reduce((sum, t) => sum + parseFloat(t.amount), 0))
                     .toFixed(2)}
                 </div>
                 <div className="stat-label">Total Expenses</div>
@@ -146,7 +133,7 @@ const Transactions = () => {
               <div className="stat">
                 <div className="stat-value">
                   £{transactions
-                    .reduce((sum, t) => sum + t.amount, 0)
+                    .reduce((sum, t) => sum + parseFloat(t.amount), 0)
                     .toFixed(2)}
                 </div>
                 <div className="stat-label">Net Balance</div>

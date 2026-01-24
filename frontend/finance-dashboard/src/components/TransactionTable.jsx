@@ -43,11 +43,20 @@ const TransactionTable = ({
   };
 
   const sortedTransactions = [...transactions].sort((a, b) => {
-    if (a[sortConfig.key] < b[sortConfig.key]) {
-      return sortConfig.direction === 'asc' ? -1 : 1;
+    let aValue = a[sortConfig.key];
+    let bValue = b[sortConfig.key];
+
+    // Convert to float if sorting by amount
+    if (sortConfig.key === 'amount') {
+        aValue = parseFloat(aValue);
+        bValue = parseFloat(bValue);
     }
-    if (a[sortConfig.key] > b[sortConfig.key]) {
-      return sortConfig.direction === 'asc' ? 1 : -1;
+
+    if (aValue < bValue) {
+        return sortConfig.direction === 'asc' ? -1 : 1;
+    }
+    if (aValue > bValue) {
+        return sortConfig.direction === 'asc' ? 1 : -1;
     }
     return 0;
   });
@@ -131,7 +140,7 @@ const TransactionTable = ({
                 <td>{transaction.account}</td>
                 <td>
                   <button
-                    onClick={() => {
+                    onClick={async () => {
                       if (window.confirm('Are you sure you want to delete this transaction?')) {
                         onDelete(transaction.id);
                       }
