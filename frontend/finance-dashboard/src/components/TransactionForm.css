@@ -92,3 +92,43 @@
   color: red;
   margin-top: 5px;
 }
+
+.loading-accounts {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  background: #f3f4f6;
+  border-radius: 6px;
+}
+
+.spinner-small {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #e5e7eb;
+  border-top-color: #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.no-accounts {
+  padding: 10px;
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  border-radius: 6px;
+}
+
+.warning-text {
+  color: #d97706;
+  font-weight: 500;
+}
+
+.account-hint {
+  margin: 5px 0 0 0;
+  font-size: 0.85rem;
+  color: #92400e;
+}

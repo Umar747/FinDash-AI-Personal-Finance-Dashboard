@@ -39,3 +39,17 @@ export const transactionsAPI = {
     },
   }),
 };
+
+export const accountsAPI = {
+  // Get all accounts for a user
+  getAll: (userId) => api.get(`/accounts/${userId}`),
+  
+  // Get a single account for a user
+  getById: (userId, accountId) => api.get(`/accounts/${userId}/${accountId}`),
+  
+  // Create new account
+  create: (accountData) => api.post('/accounts', accountData),
+  
+  // Delete account
+  delete: (accountId) => api.delete(`/accounts/${accountId}`),
+};

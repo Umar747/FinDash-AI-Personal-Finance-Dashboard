@@ -162,3 +162,82 @@
 .csv-guide a:hover {
   text-decoration: underline;
 }
+
+.account-selection-section {
+  margin-bottom: 1.5rem;
+}
+
+.account-selection-section label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #4B5563;
+  font-size: 0.9rem;
+}
+
+.account-select {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #D1D5DB;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  transition: all 0.2s;
+}
+
+.account-select:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.loading-accounts {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  background: #f3f4f6;
+  border-radius: 6px;
+}
+
+.no-accounts {
+  padding: 10px;
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  border-radius: 6px;
+}
+
+.warning-text {
+  color: #d97706;
+  font-weight: 500;
+}
+
+.account-hint {
+  margin: 5px 0 0 0;
+  font-size: 0.85rem;
+  color: #92400e;
+}
+
+.selection-required {
+  margin: 0.5rem 0 0 0;
+  font-size: 0.85rem;
+}
+
+.upload-area.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  border-color: #d1d5db;
+  background: #f9fafb;
+}
+
+.upload-area.disabled:hover {
+  border-color: #d1d5db;
+  background: #f9fafb;
+}
+
+.upload-area.disabled .upload-icon {
+  opacity: 0.5;
+}
+
+.upload-area.disabled .upload-text strong {
+  color: #6b7280;
+}

@@ -1,17 +1,44 @@
 // src/components/CsvUploader.jsx
-import React, { useState, useRef } from 'react';
-import { transactionsAPI } from '../services/api';
-import { FaDownload, FaUpload, FaFolderOpen } from "react-icons/fa";
+import React, { useState, useRef, useEffect } from 'react';
+import { transactionsAPI, accountsAPI } from '../services/api';
+import { FaDownload, FaUpload, FaFolderOpen, FaExclamationCircle } from "react-icons/fa";
 import './CsvUploader.css';
 
-const CsvUploader = ({ onUploadSuccess }) => {
+const CsvUploader = ({ onUploadSuccess, userId = 1 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [selectedAccountId, setSelectedAccountId] = useState('');
+  const [accounts, setAccounts] = useState([]);
+  const [accountsLoading, setAccountsLoading] = useState(true);
   const fileInputRef = useRef(null);
 
+  // Fetch accounts on component mount
+  useEffect(() => {
+    fetchAccounts();
+  }, []);
+
+  const fetchAccounts = async () => {
+    try {
+      const response = await accountsAPI.getAll(userId);
+      setAccounts(response.data.accounts || []);
+    } catch (err) {
+      console.error('Error fetching accounts:', err);
+    } finally {
+      setAccountsLoading(false);
+    }
+  };
+
+  const handleAccountChange = (e) => {
+    setSelectedAccountId(e.target.value);
+  };
+
   const handleDragOver = (e) => {
+    if (!selectedAccountId) {
+      return;
+    }
+
     e.preventDefault();
     setIsDragging(true);
   };
@@ -22,6 +49,10 @@ const CsvUploader = ({ onUploadSuccess }) => {
   };
 
   const handleDrop = (e) => {
+    if (!selectedAccountId) {
+      return;
+    }
+
     e.preventDefault();
     setIsDragging(false);
     
@@ -32,6 +63,10 @@ const CsvUploader = ({ onUploadSuccess }) => {
   };
 
   const handleFileInput = (e) => {
+    if (!selectedAccountId) {
+      return;
+    }
+
     const file = e.target.files[0];
     if (file) {
       handleFile(file);
@@ -57,6 +92,7 @@ const CsvUploader = ({ onUploadSuccess }) => {
 
     const formData = new FormData();
     formData.append('csvFile', file);
+    formData.append('account_id', selectedAccountId);
 
     try {
       const response = await transactionsAPI.uploadCSV(formData);
@@ -81,6 +117,14 @@ const CsvUploader = ({ onUploadSuccess }) => {
     }
   };
 
+  const handleUploadAreaClick = () => {
+    if (!selectedAccountId || isUploading) {
+      return;
+    }
+
+    document.getElementById('file-input').click();
+  };
+
   return (
     <div className="csv-uploader-container">
       <h3>Upload Bank Statement (CSV)</h3>
@@ -88,12 +132,48 @@ const CsvUploader = ({ onUploadSuccess }) => {
         Upload your bank statement in CSV format. The system will automatically categorise transactions using AI and add them to your dashboard.
       </p>
 
+      <div className="account-selection-section">
+        <label>Select Account *</label>
+        {accountsLoading ? (
+          <div className="loading-accounts">
+            <div className="spinner-small"></div>
+            <span>Loading accounts...</span>
+          </div>
+        ) : accounts.length === 0 ? (
+          <div className="no-accounts">
+            <span className="warning-text">No accounts available.</span>
+            <p className="account-hint">
+              Please add bank accounts in the Account Manager above.
+            </p>
+          </div>
+        ) : (
+          <select
+            value={selectedAccountId}
+            onChange={handleAccountChange}
+            className="account-select"
+            required
+          >
+            <option value="">Select an account for this CSV</option>
+            {accounts.map(account => (
+              <option key={account.id} value={account.id}>
+                {account.account}
+              </option>
+            ))}
+          </select>
+        )}
+        {accounts.length > 0 && !accountsLoading && !selectedAccountId && (
+          <p className="selection-required">
+            ⚠️ Please select an account before uploading a file
+          </p>
+        )}
+      </div>
+
       <div
-        className={`upload-area ${isDragging ? 'dragging' : ''} ${isUploading ? 'uploading' : ''}`}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-        onClick={() => !isUploading && document.getElementById('file-input').click()}
+        className={`upload-area ${isDragging ? 'dragging' : ''} ${isUploading ? 'uploading' : ''} ${!selectedAccountId ? 'disabled' : ''}`}
+        onDragOver={selectedAccountId ? handleDragOver : undefined}
+        onDragLeave={selectedAccountId ? handleDragLeave : undefined}
+        onDrop={selectedAccountId ? handleDrop : undefined}
+        onClick={handleUploadAreaClick}
       >
         <input
           ref={fileInputRef}
@@ -101,7 +181,7 @@ const CsvUploader = ({ onUploadSuccess }) => {
           type="file"
           accept=".csv"
           onChange={handleFileInput}
-          disabled={isUploading}
+          disabled={isUploading || !selectedAccountId}
           style={{ display: 'none' }}
         />
         
@@ -111,6 +191,14 @@ const CsvUploader = ({ onUploadSuccess }) => {
               <div className="upload-icon"><FaUpload /></div>
               <p>Uploading your CSV…</p>
               <div className="spinner" />
+            </>
+          ) : !selectedAccountId ? (
+            <>
+              <div className="upload-icon disabled"><FaFolderOpen /></div>
+              <p className="upload-text">
+                <strong>Select an account above to enable file upload</strong>
+                <span className="upload-subtext">File upload disabled until account is selected</span>
+              </p>
             </>
           ) : (
             <>

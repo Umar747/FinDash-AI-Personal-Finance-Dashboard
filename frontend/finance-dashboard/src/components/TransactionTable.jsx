@@ -8,7 +8,6 @@ const TransactionTable = ({
   transactions, 
   onDelete, 
   onDeleteMultiple,
-  onSelectionChange 
 }) => {
   const [selectedRows, setSelectedRows] = useState(new Set());
   const [sortConfig, setSortConfig] = useState({ key: 'date', direction: 'desc' });
@@ -21,17 +20,14 @@ const TransactionTable = ({
       newSelected.add(id);
     }
     setSelectedRows(newSelected);
-    onSelectionChange(Array.from(newSelected));
   };
 
   const handleSelectAll = (e) => {
     if (e.target.checked) {
       const allIds = transactions.map(t => t.id);
       setSelectedRows(new Set(allIds));
-      onSelectionChange(allIds);
     } else {
       setSelectedRows(new Set());
-      onSelectionChange([]);
     }
   };
 
@@ -61,11 +57,11 @@ const TransactionTable = ({
     return 0;
   });
 
-  const handleDeleteSelected = () => {
+  const handleDeleteSelected = async () => {
     if (selectedRows.size === 0) return;
     
     if (window.confirm(`Are you sure you want to delete ${selectedRows.size} selected transaction(s)?`)) {
-      onDeleteMultiple(Array.from(selectedRows));
+      await onDeleteMultiple(Array.from(selectedRows));
       setSelectedRows(new Set());
     }
   };

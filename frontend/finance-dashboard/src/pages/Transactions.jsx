@@ -3,12 +3,13 @@ import React, { useState, useEffect } from 'react';
 import TransactionForm from '../components/TransactionForm';
 import TransactionTable from '../components/TransactionTable';
 import CsvUploader from '../components/CsvUploader';
+import AccountManager from '../components/AccountManager';
 import { transactionsAPI } from '../services/api';
 import './Transactions.css';
 
 const Transactions = () => {
   const [transactions, setTransactions] = useState([]);
-  const [selectedRows, setSelectedRows] = useState([]);
+  // const [accounts, setAccounts] = useState([]);
   const [filters, setFilters] = useState({
     startDate: '',
     endDate: '',
@@ -29,6 +30,11 @@ const Transactions = () => {
   useEffect(() => {
     fetchTransactions();
   }, []);
+
+  const handleAccountChange = () => {
+    // Might want to refresh something when accounts change
+    // console.log('Accounts were updated');
+  };
 
   const handleAddTransaction = async (transactionData) => {
     try {
@@ -51,12 +57,17 @@ const Transactions = () => {
   };
 
   const handleDeleteMultiple = async (ids) => {
+    setTransactions(prev =>
+      prev.filter(t => !ids.includes(t.id))
+    );
+
     try {
       await transactionsAPI.deleteMultiple(ids);
       await fetchTransactions(); // refresh table
     } catch (error) {
       console.error(error);
       alert('Failed to delete transactions');
+      fetchTransactions(); // rollback if needed
     }
   };
 
@@ -100,6 +111,11 @@ const Transactions = () => {
 
       <div className="content-grid">
         <div className="left-column">
+          <AccountManager 
+            userId={1} // Replace with actual user ID
+            onAccountChange={handleAccountChange}
+          />
+          
           <CsvUploader onUploadSuccess={handleUploadSuccess} />
           <TransactionForm onSubmit={handleAddTransaction} categories={categories} />
         </div>
@@ -206,7 +222,6 @@ const Transactions = () => {
             })}
             onDelete={handleDeleteTransaction}
             onDeleteMultiple={handleDeleteMultiple}
-            onSelectionChange={setSelectedRows}
           />
         </div>
       </div>

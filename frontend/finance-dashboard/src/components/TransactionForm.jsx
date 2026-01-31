@@ -1,22 +1,40 @@
 // src/components/TransactionForm.jsx
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { accountsAPI } from '../services/api';
 import './TransactionForm.css';
 
 // Maybe use the categories stuff commented out in a future version, so user can enter category themselves if they want
 // const TransactionForm = ({ onSubmit, categories = [] }) => {
-const TransactionForm = ({ onSubmit }) => {
+const TransactionForm = ({ onSubmit, userId = 1 }) => {
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     description: '',
     amount: '',
     // category: '',
-    account: 'HSBC Current Account',
+    account_id: '',
   });
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [accounts, setAccounts] = useState([]);
+  const [accountsLoading, setAccountsLoading] = useState(true);
 
+  // Fetch accounts on component mount
+  useEffect(() => {
+    fetchAccounts();
+  }, []);
+
+  const fetchAccounts = async () => {
+    try {
+      const response = await accountsAPI.getAll(userId);
+      setAccounts(response.data.accounts || []);
+    } catch (err) {
+      console.error('Error fetching accounts:', err);
+    } finally {
+      setAccountsLoading(false);
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -33,7 +51,14 @@ const TransactionForm = ({ onSubmit }) => {
 
     try {
       if (onSubmit) {
-        await onSubmit(formData);
+        const selectedAccount = accounts.find(acc => acc.id.toString() === formData.account_id);
+
+        const transactionData = {
+          ...formData,
+          account: selectedAccount ? selectedAccount.account : '',
+        };
+
+        await onSubmit(transactionData);
       }
 
       // Reset form
@@ -42,7 +67,7 @@ const TransactionForm = ({ onSubmit }) => {
         description: '',
         amount: '',
         // category: '',
-        account: 'HSBC Current Account',
+        account_id: '',
       });
 
       // Show success message
@@ -121,14 +146,33 @@ const TransactionForm = ({ onSubmit }) => {
 
         <div className="form-group">
           <label>Account</label>
-          <input
-            type="text"
-            name="account"
-            value={formData.account}
-            onChange={handleChange}
-            placeholder="e.g., HSBC Current Account"
-            required
-          />
+          {accountsLoading ? (
+            <div className="loading-accounts">
+              <div className="spinner-small"></div>
+              <span>Loading accounts...</span>
+            </div>
+          ) : accounts.length === 0 ? (
+            <div className="no-accounts">
+              <span className="warning-text">No accounts available.</span>
+              <p className="account-hint">
+                Please add bank accounts in the Account Manager above.
+              </p>
+            </div>
+          ) : (
+            <select
+              name="account_id"
+              value={formData.account_id}
+              onChange={handleChange}
+              required
+            >
+              <option value="">Select an account</option>
+              {accounts.map(account => (
+                <option key={account.id} value={account.id}>
+                  {account.account}
+                </option>
+              ))}
+            </select>
+          )}
         </div>
 
         <button type="submit" className="submit-btn" disabled={loading}>

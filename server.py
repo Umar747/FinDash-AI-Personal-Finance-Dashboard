@@ -57,7 +57,7 @@ def index():
 
 @app.route('/transactions', methods=['GET'])
 def get_all_transactions():
-    """Handle retrieving transactions database and returning"""
+    """Handle retrieving transactions database and return them"""
     try:
         conn = get_db_connection()
         cur = conn.cursor()
@@ -122,10 +122,10 @@ def create_transaction():
     data = request.get_json()
 
     required_fields = [
-        'account',
+        'date',
         'description',
         'amount',
-        'date',
+        'account_id',
     ]
 
     if not all(field in data for field in required_fields):
@@ -135,16 +135,7 @@ def create_transaction():
         conn = get_db_connection()
         cur = conn.cursor()
 
-        # Get account_id
-        cur.execute("SELECT id FROM accounts WHERE user_id = %s AND account_name = %s", (1, data['account']))
-
-        account = cur.fetchone()
-        if not account:
-            return jsonify({'error': 'Account not found'}), 404
-
-        account_id = account[0]
-
-        cur.execute("INSERT INTO transactions (user_id, account_id, transaction_name, amount, transaction_date, category) VALUES (%s, %s, %s, %s, %s, %s) RETURNING id", (1, account_id, data['description'], data['amount'], data['date'], model.predict_single(nlp.transform_embeddings([data['description']])[0]).get("predicted_category")))
+        cur.execute("INSERT INTO transactions (user_id, account_id, transaction_name, amount, transaction_date, category) VALUES (%s, %s, %s, %s, %s, %s) RETURNING id", (1, data['account_id'], data['description'], data['amount'], data['date'], model.predict_single(nlp.transform_embeddings([data['description']])[0]).get("predicted_category")))
 
         transaction_id = cur.fetchone()[0]
         conn.commit()
@@ -179,6 +170,15 @@ def upload_csv():
     # Check file extension
     if not allowed_file(file.filename):
         return jsonify({'error': 'Only CSV files are allowed'}), 400
+    
+    account_id = request.form.get('account_id')
+    if not account_id:
+        return jsonify({'message': 'Account ID is required'}), 400
+    
+    try:
+        account_id = int(account_id)
+    except ValueError:
+        return jsonify({'message': 'Invalid account ID'}), 400
     
     try:
         # Save file temporarily
@@ -227,7 +227,8 @@ def upload_csv():
 
         for row_num in range(num_rows):
             print(f'{data["Name"][row_num]} has an amount of {data["Amount"][row_num]} and a date of {data["Date"][row_num]}')
-            cur.execute("INSERT INTO transactions (user_id, account_id, transaction_name, amount, transaction_date, category) VALUES (%s, %s, %s, %s, %s, %s) RETURNING id", (1, 1, data['Name'][row_num], data['Amount'][row_num], data['Date'][row_num], model.predict_single(nlp.transform_embeddings([data['Name'][row_num]])[0]).get("predicted_category")))
+            category = model.predict_single(nlp.transform_embeddings([data['Name'][row_num]])[0]).get("predicted_category")
+            cur.execute("INSERT INTO transactions (user_id, account_id, transaction_name, amount, transaction_date, category) VALUES (%s, %s, %s, %s, %s, %s) RETURNING id", (1, account_id, data['Name'][row_num], data['Amount'][row_num], data['Date'][row_num], category))
 
         transaction_id = cur.fetchone()[0]
         conn.commit()
@@ -292,6 +293,124 @@ def delete_transactions_multiple():
             'message': 'Transactions deleted successfully',
             'deleted_count': deleted_count,
             'deleted_ids': ids
+        })
+
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
+
+
+
+@app.route('/accounts/<int:user_id>', methods=['GET'])
+def get_all_accounts(user_id):
+    """Handle retrieving accounts database and return them"""
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT id, account_name FROM accounts WHERE user_id = (%s);", (user_id, ))
+        accounts = cur.fetchall()
+        
+        res_accounts = []
+        for account in accounts:
+            res_accounts.append({
+                "id": account[0],
+                "account": account[1]
+            })
+        
+        return jsonify({
+            'accounts': res_accounts
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
+
+
+
+@app.route('/accounts/<int:user_id>/<int:account_id>', methods=['GET'])
+def get_account(user_id, account_id):
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT id, account_name FROM accounts WHERE user_id = (%s) AND id = (%s);", (user_id, account_id))
+        account = cur.fetchone()
+
+        if not account:
+            return jsonify({'error': 'Account not found'}), 404
+
+        return jsonify({
+            "id": account[0],
+            "account": account[1]
+        })
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
+
+
+
+@app.route('/accounts', methods=['POST'])
+def create_account():
+    data = request.get_json()
+
+    required_fields = [
+        'user_id',
+        'account_name',
+    ]
+
+    if not data or not all(field in data for field in required_fields):
+        return jsonify({'error': 'Missing required fields'}), 400
+
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute("INSERT INTO accounts (user_id, account_name) VALUES (%s, %s) RETURNING id, account_name", (data['user_id'], data['account_name']))
+
+        account = cur.fetchone()
+        conn.commit()
+
+        return jsonify({
+            'message': 'Account created',
+            'account_id': account[0],
+            'account_name': account[1]
+        }), 201
+
+    except psycopg2.errors.UniqueViolation:
+        conn.rollback()
+        return jsonify({
+            'error': 'Bank account with this name already exists for this user'
+        }), 409
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
+
+
+
+@app.route('/accounts/<int:account_id>', methods=['DELETE'])
+def delete_account(account_id):
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute("DELETE FROM accounts WHERE id = %s", (account_id, ))
+
+        if cur.rowcount == 0:
+            return jsonify({'error': 'Account not found'}), 404
+
+        conn.commit()
+
+        return jsonify({
+            'message': 'Account deleted'
         })
 
     except Exception as e:
