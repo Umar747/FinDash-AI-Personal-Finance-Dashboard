@@ -9,6 +9,7 @@ import tempfile
 from ml_classifier import FinancialTransactionClassifier
 from main import NLPDataProcessor
 from reader import CSVReader
+from forecast import FinancialForecaster
 
 # Load environment variables
 load_dotenv()
@@ -420,6 +421,80 @@ def delete_account(account_id):
         cur.close()
         conn.close()
 
+
+
+
+
+@app.route('/transactions/forecast/<int:user_id>', methods=['GET'])
+def generate_forecast(user_id):
+    """Trigger forecasting logic, save to database, and return results"""
+    
+    try:
+        # Fetch transaction data
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        query = """
+            SELECT transaction_date, amount, category 
+            FROM transactions 
+            WHERE user_id = %s;
+        """
+        cur.execute(query, (user_id,))
+        rows = cur.fetchall()
+        
+        if not rows:
+            return jsonify({'error': f'No transactions found for user {user_id}'}), 404
+
+        # Prepare DataFrame for run_forecast()
+        df = pd.DataFrame(rows, columns=['transaction_date', 'amount', 'category'])
+        df['amount'] = df['amount'].astype(float)
+        df['transaction_date'] = pd.to_datetime(df['transaction_date'])
+
+        # Run Forecast
+        forecaster = FinancialForecaster(forecast_days=90)
+        results = forecaster.run_forecast(df)
+
+        # Delete existing forecasts and update database
+        cur.execute("DELETE FROM forecasts WHERE user_id = %s;", (user_id,))
+        
+        insert_query = """
+            INSERT INTO forecasts (user_id, category, forecast_date, predicted_amount)
+            VALUES (%s, %s, %s, %s);
+        """
+        
+        # Format data for executemany
+        forecast_data = [
+            (user_id, row['category'], row['ds'].date(), row['amount']) 
+            for _, row in results.iterrows()
+        ]
+        
+        cur.executemany(insert_query, forecast_data)
+        conn.commit()
+
+        # Prepare JSON response
+        res_forecasts = []
+        for _, row in results.iterrows():
+            res_forecasts.append({
+                "category": row['category'],
+                "date": str(row['ds'].date()),
+                "predicted_amount": float(row['amount'])
+            })
+
+        return jsonify({
+            'message': f'Successfully created {len(forecast_data)} forecast rows',
+            'forecasts': res_forecasts
+        }), 200
+
+    except ValueError as e:
+        if "Insufficient data" in str(e):
+            return jsonify({'error': 'Not enough transaction history to generate a forecast'}), 400
+        return jsonify({'error': str(e)}), 500
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
 
 
 

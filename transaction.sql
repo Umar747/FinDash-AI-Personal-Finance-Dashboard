@@ -20,10 +20,19 @@ CREATE TABLE transactions (
     category VARCHAR(50) NOT NULL
 );
 
+CREATE TABLE forecasts (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    category TEXT NOT NULL,
+    forecast_date DATE NOT NULL,
+    predicted_amount NUMERIC(12,2) NOT NULL
+);
+
 CREATE INDEX idx_transactions_user_id ON transactions(user_id);
 CREATE INDEX idx_transactions_date ON transactions(transaction_date);
 CREATE INDEX idx_transactions_account_id ON transactions(account_id);
 CREATE INDEX idx_accounts_user_id ON accounts(user_id);
+CREATE INDEX idx_forecast_lookup ON forecasts(user_id, category, forecast_date);
 
 INSERT INTO users (username) VALUES ('umar'), ('test');
 INSERT INTO accounts (user_id, account_name) VALUES (1, 'HSBC Current Account'), (1, 'TSB Credit Account'), (2, 'Nationwide Flex Account');
