@@ -39,7 +39,7 @@ const HomePage = () => {
         <div className="feature-card">
           <div className="feature-icon">📈</div>
           <h3>Predictive Analytics</h3>
-          <p>Facebook Prophet models forecast your future spending patterns.</p>
+          <p>Our tailored models forecast your future spending patterns.</p>
         </div>
         
         <div className="feature-card">

@@ -477,7 +477,7 @@ def generate_forecast(user_id):
             res_forecasts.append({
                 "category": row['category'],
                 "date": str(row['ds'].date()),
-                "predicted_amount": float(row['amount'])
+                "predicted_amount": str(row['amount'])
             })
 
         return jsonify({

@@ -53,3 +53,11 @@ export const accountsAPI = {
   // Delete account
   delete: (accountId) => api.delete(`/accounts/${accountId}`),
 };
+
+export const analyticsAPI = {
+  // Triggers the Random Forest forecasting model
+  getForecast: (userId) => api.get(`/transactions/forecast/${userId}`),
+  
+  // Get existing transactions
+  getHistory: () => api.get('/transactions'),
+};

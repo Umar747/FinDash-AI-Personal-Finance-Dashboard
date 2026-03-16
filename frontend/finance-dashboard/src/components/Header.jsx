@@ -25,6 +25,9 @@ const Header = () => {
         <Link to="/transactions" className={`nav-btn ${isActive('/transactions')}`}>
           Transactions
         </Link>
+        <Link to="/insights" className={`nav-btn ${isActive('/insights')}`}>
+          Insights
+        </Link>
         <button className="nav-btn">Analytics</button>
         <button className="nav-btn">Forecast</button>
       </nav>

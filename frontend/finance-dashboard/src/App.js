@@ -5,6 +5,7 @@ import Header from './components/Header';
 import HomePage from './pages/HomePage';
 import Transactions from './pages/Transactions';
 import './App.css';
+import Insights from './pages/Insights';
 
 function App() {
   return (
@@ -13,6 +14,7 @@ function App() {
     <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/transactions" element={<Transactions />} />
+        <Route path="/insights" element={<Insights />} />
     </Routes>
     <footer className="footer">
         <p>Final Year Project - UCL Computer Science | AI-Powered Personal Finance Dashboard</p>

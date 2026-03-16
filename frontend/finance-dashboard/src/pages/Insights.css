@@ -1,0 +1,84 @@
+.insights-page {
+  padding: 2rem;
+  max-width: 95%; 
+  margin: 0 auto;
+  width: 100%;
+}
+
+.insights-controls {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+}
+
+.insights-controls button {
+  padding: 0.6rem 1.2rem;
+  border-radius: 20px;
+  border: 1px solid #e5e7eb;
+  background: white;
+  color: #4b5563;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.insights-controls button:hover {
+  background: #f9fafb;
+  border-color: #667eea;
+}
+
+.insights-controls button.active {
+  background: #667eea;
+  color: white;
+  border-color: #667eea;
+}
+
+.chart-card {
+  background: white;
+  padding: 2rem;
+  border-radius: 15px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+  width: 100%;
+}
+
+.chart-card h3 {
+  margin-bottom: 1.5rem;
+  color: #1f2937;
+  font-size: 1.5rem;
+  text-align: center;
+}
+
+.chart-container {
+  width: 100%;
+}
+
+/* Specific styling for the pie chart section */
+.pie-section {
+  margin-top: 2rem;
+}
+
+.pie-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.recharts-pie-label-text {
+  font-size: 12px;
+  font-weight: 500;
+  fill: #4b5563;
+}
+
+.insights-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 60vh;
+  font-size: 1.1rem;
+  color: #667eea;
+}
+
+.insights-state.error {
+  color: #dc2626;
+}
