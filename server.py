@@ -3,30 +3,19 @@ from flask_cors import CORS
 import psycopg2
 import pandas as pd
 import os
-from dotenv import load_dotenv
 import tempfile
+import traceback
+from database import get_db_connection
 
 from ml_classifier import FinancialTransactionClassifier
 from main import NLPDataProcessor
 from reader import CSVReader
 from forecast import FinancialForecaster
 
-# Load environment variables
-load_dotenv()
+from finance_agent import ask_finance_agent
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
-
-# Database connection function
-def get_db_connection():
-    conn = psycopg2.connect(
-        host=os.getenv('DB_HOST'),
-        port=os.getenv('DB_PORT'),
-        database=os.getenv('DB_NAME'),
-        user=os.getenv('DB_USER'),
-        password=os.getenv('DB_PASSWORD')
-    )
-    return conn
 
 # Configuration
 UPLOAD_FOLDER = tempfile.gettempdir()
@@ -495,6 +484,23 @@ def generate_forecast(user_id):
     finally:
         cur.close()
         conn.close()
+
+
+
+
+
+@app.route('/api/chat', methods=['POST'])
+def chat_with_agent():
+    data = request.get_json()
+    user_message = data.get('message')
+    
+    try:
+        agent_response = ask_finance_agent(user_message)
+        return jsonify({"response": agent_response})
+    except Exception as e:
+        print("--- AGENT ERROR ---")
+        traceback.print_exc() 
+        return jsonify({"error": "Internal Agent Error", "details": str(e)}), 500
 
 
 

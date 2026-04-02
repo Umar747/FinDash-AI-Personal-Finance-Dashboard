@@ -116,8 +116,14 @@ const Insights = ({ userId = 1 }) => {
     const anchor = new Date(pivotDate);
     const cutoff = new Date(pivotDate);
     cutoff.setDate(anchor.getDate() - dateRange);
-    
-    return data.filter(d => new Date(d.date) >= cutoff);
+
+    return data.filter(d => {
+      // Always show forecast data
+      if (d.type === 'forecast') return true;
+      
+      // Only filter historical data based on the dateRange
+      return new Date(d.date) >= cutoff;
+    });
   }, [data, dateRange, pivotDate]);
 
   if (loading) return <div className="insights-state">Generating AI Insights...</div>;

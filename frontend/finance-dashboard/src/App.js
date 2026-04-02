@@ -6,6 +6,7 @@ import HomePage from './pages/HomePage';
 import Transactions from './pages/Transactions';
 import './App.css';
 import Insights from './pages/Insights';
+import Chat from './pages/Chat';
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/transactions" element={<Transactions />} />
         <Route path="/insights" element={<Insights />} />
+        <Route path="/chat" element={<Chat />} />
     </Routes>
     <footer className="footer">
         <p>Final Year Project - UCL Computer Science | AI-Powered Personal Finance Dashboard</p>

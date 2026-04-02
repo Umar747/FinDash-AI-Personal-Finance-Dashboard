@@ -6,7 +6,7 @@ const API_BASE_URL = 'http://127.0.0.1:5000';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000,
+  timeout: 60000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -60,4 +60,9 @@ export const analyticsAPI = {
   
   // Get existing transactions
   getHistory: () => api.get('/transactions'),
+};
+
+export const agentAPI = {
+  // Sends a message to the local Llama AI agent and receives a task-oriented response.
+  ask: (message) => api.post('/api/chat', { message }),
 };

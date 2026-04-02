@@ -28,8 +28,9 @@ const Header = () => {
         <Link to="/insights" className={`nav-btn ${isActive('/insights')}`}>
           Insights
         </Link>
-        <button className="nav-btn">Analytics</button>
-        <button className="nav-btn">Forecast</button>
+        <Link to="/chat" className={`nav-btn ${isActive('/chat')}`}>
+          Chat
+        </Link>
       </nav>
     </header>
   );

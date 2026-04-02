@@ -91,6 +91,9 @@ const TransactionTable = ({
                   checked={selectedRows.size === transactions.length && transactions.length > 0}
                 />
               </th>
+              <th onClick={() => handleSort('id')} className="sortable">
+                ID {sortConfig.key === 'id' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+              </th>
               <th onClick={() => handleSort('date')} className="sortable">
                 Date {sortConfig.key === 'date' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
               </th>
@@ -120,6 +123,7 @@ const TransactionTable = ({
                     onChange={() => handleSelectRow(transaction.id)}
                   />
                 </td>
+                <td>{transaction.id}</td>
                 <td>{formatDate(transaction.date)}</td>
                 <td className="description">{transaction.description}</td>
                 <td className={`amount ${transaction.amount >= 0 ? 'credit' : 'debit'}`}>
