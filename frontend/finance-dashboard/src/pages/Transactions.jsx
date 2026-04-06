@@ -4,18 +4,26 @@ import TransactionForm from '../components/TransactionForm';
 import TransactionTable from '../components/TransactionTable';
 import CsvUploader from '../components/CsvUploader';
 import AccountManager from '../components/AccountManager';
-import { transactionsAPI } from '../services/api';
+import EditTransactionBox from '../components/EditTransactionBox';
+import { transactionsAPI, accountsAPI } from '../services/api';
 import './Transactions.css';
 
 const Transactions = () => {
   const [transactions, setTransactions] = useState([]);
-  // const [accounts, setAccounts] = useState([]);
+  const [accounts, setAccounts] = useState([]);
+  const [editingTransaction, setEditingTransaction] = useState(null);
   const [filters, setFilters] = useState({
     startDate: '',
     endDate: '',
     category: '',
     search: '',
   });
+
+  const USER_ID = 1; // Hardcoded user_id
+  const CATEGORIES = [
+    "Income", "Transport", "Groceries", "Dining", 
+    "Shopping & Retail", "Entertainment", "Bills"
+  ]; // Hardcoded categories
 
   const fetchTransactions = async () => {
     try {
@@ -26,14 +34,23 @@ const Transactions = () => {
     }
   };
 
-  // Get all transactions on initial load
+  const fetchAccounts = async () => {
+      try {
+        const response = await accountsAPI.getAll(USER_ID);
+        setAccounts(response.data.accounts || []);
+      } catch (err) {
+        console.error('Error fetching accounts:', err);
+      }
+    };
+
+  // Initial load of transactions and accounts
   useEffect(() => {
     fetchTransactions();
+    fetchAccounts();
   }, []);
 
   const handleAccountChange = () => {
-    // Might want to refresh something when accounts change
-    // console.log('Accounts were updated');
+    fetchAccounts(); // Refresh accounts list when added/deleted
   };
 
   const handleAddTransaction = async (transactionData) => {
@@ -42,9 +59,20 @@ const Transactions = () => {
       await fetchTransactions(); // refresh table
     } catch (error) {
       console.error('Error adding transaction:', error);
-      throw new Error()
+      throw new Error();
     }
   };
+
+  const handleUpdateTransaction = async (id, updatedData) => {
+      try {
+        await transactionsAPI.update(id, updatedData);
+        setEditingTransaction(null); // Close the popup
+        await fetchTransactions(); // Refresh the table
+      } catch (error) {
+        console.error('Error updating transaction:', error);
+        alert('Failed to update transaction');
+      }
+    };
 
   const handleDeleteTransaction = async (id) => {
     try {
@@ -98,7 +126,7 @@ const Transactions = () => {
   };
 
   // Get categories for filter dropdown
-  const categories = [...new Set(transactions.map(t => t.category))].sort();
+  // const categories = [...new Set(transactions.map(t => t.category))].sort();
 
   return (
     <div className="transactions-page">
@@ -112,12 +140,13 @@ const Transactions = () => {
       <div className="content-grid">
         <div className="left-column">
           <AccountManager 
-            userId={1} // Replace with actual user ID
+            userId={USER_ID} // Replace with actual user ID
+            accounts={accounts} // Pass down lifted state
             onAccountChange={handleAccountChange}
           />
           
-          <CsvUploader onUploadSuccess={handleUploadSuccess} />
-          <TransactionForm onSubmit={handleAddTransaction} categories={categories} />
+          <CsvUploader onUploadSuccess={handleUploadSuccess} accounts={accounts} />
+          <TransactionForm onSubmit={handleAddTransaction} accounts={accounts} categories={CATEGORIES} />
         </div>
 
         <div className="right-column">
@@ -188,7 +217,7 @@ const Transactions = () => {
                   onChange={handleFilterChange}
                 >
                   <option value="">All Categories</option>
-                  {categories.map(category => (
+                  {CATEGORIES.map(category => (
                     <option key={category} value={category}>{category}</option>
                   ))}
                 </select>
@@ -222,9 +251,19 @@ const Transactions = () => {
             })}
             onDelete={handleDeleteTransaction}
             onDeleteMultiple={handleDeleteMultiple}
+            onEdit={(transaction) => setEditingTransaction(transaction)} // Handle edit click
           />
         </div>
       </div>
+
+      {editingTransaction && (
+        <EditTransactionBox 
+          transaction={editingTransaction}
+          accounts={accounts}
+          onClose={() => setEditingTransaction(null)}
+          onSave={handleUpdateTransaction}
+        />
+      )}
     </div>
   );
 };

@@ -4,38 +4,19 @@ import { FaChevronDown, FaChevronUp, FaPlus, FaTrash, FaCreditCard, FaBuilding }
 import { accountsAPI } from '../services/api';
 import './AccountManager.css';
 
-const AccountManager = ({ userId = 1, onAccountChange }) => { // Default userId of 1 for now
+const AccountManager = ({ userId = 1, accounts, onAccountChange }) => { // Default userId of 1 for now
   const [isExpanded, setIsExpanded] = useState(false);
-  const [accounts, setAccounts] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [newAccountName, setNewAccountName] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [toast, setToast] = useState(null);
 
-  useEffect(() => {
-    fetchAccounts();
-  }, [isExpanded]);
-
   const showToast = (type, message) => {
     setToast({ type, message });
     setTimeout(() => {
       setToast(null);
     }, 5000);
-  };
-
-  const fetchAccounts = async () => {
-    setIsLoading(true);
-    setError('');
-    try {
-      const response = await accountsAPI.getAll(userId);
-      setAccounts(response.data.accounts || []);
-    } catch (err) {
-      console.error('Error fetching accounts:', err);
-      setError('Failed to load accounts. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
   };
 
   const handleCreateAccount = async (e) => {
@@ -47,18 +28,12 @@ const AccountManager = ({ userId = 1, onAccountChange }) => { // Default userId 
 
     setIsCreating(true);
     try {
-      const response = await accountsAPI.create({
+      await accountsAPI.create({
         user_id: userId,
         account_name: newAccountName.trim()
       });
       
-      // Add new account to the list
-      setAccounts(prev => [...prev, {
-        id: response.data.account_id,
-        account: response.data.account_name
-      }]);
-      
-      // Notify parent component
+      // Notify parent component to refresh the accounts state
       if (onAccountChange) {
         onAccountChange();
       }
@@ -84,10 +59,10 @@ const AccountManager = ({ userId = 1, onAccountChange }) => { // Default userId 
     try {
       await accountsAPI.delete(accountId);
       
-      // Remove account from the list
-      setAccounts(prev => prev.filter(account => account.id !== accountId));
+      // // Remove account from the list
+      // setAccounts(prev => prev.filter(account => account.id !== accountId));
       
-      // Notify parent component
+      // Notify parent component to refresh the accounts state
       if (onAccountChange) {
         onAccountChange();
       }
@@ -112,7 +87,7 @@ const AccountManager = ({ userId = 1, onAccountChange }) => { // Default userId 
             {!isExpanded && (
               <p className="collapsed-subtitle">
                 Manage your connected bank accounts
-                {accounts.length > 0 && (
+                {accounts && accounts.length > 0 && (
                     <>
                     <br />
                     ({accounts.length} accounts)
@@ -170,25 +145,22 @@ const AccountManager = ({ userId = 1, onAccountChange }) => { // Default userId 
           <div className="accounts-list-section">
             <div className="section-header">
               <h4>Your Bank Accounts</h4>
-              <span className="account-count">{accounts.length} account(s)</span>
+              <span className="account-count">{accounts?.length || 0} account(s)</span>
             </div>
             
-            {isLoading ? (
-              <div className="loading-state">
-                <div className="spinner"></div>
-                <p>Loading accounts...</p>
-              </div>
-            ) : error ? (
+            {error && (
               <div className="error-state">
                 <p>{error}</p>
                 <button 
-                  onClick={fetchAccounts}
+                  onClick={() => setError('')}
                   className="retry-btn"
                 >
-                  Retry
+                  Dismiss
                 </button>
               </div>
-            ) : accounts.length === 0 ? (
+            )}
+            
+            {!accounts || accounts.length === 0 ? (
               <div className="empty-state">
                 <p>No bank accounts added yet. Add your first account above.</p>
               </div>
@@ -199,7 +171,7 @@ const AccountManager = ({ userId = 1, onAccountChange }) => { // Default userId 
                     <div className="account-info">
                       <div className="account-details">
                         <span className="account-name">{account.account}</span>
-                        {/* <span className="account-id">ID: {account.id}</span> */}
+                        <span className="account-id">ID: {account.id}</span>
                       </div>
                     </div>
                     <button

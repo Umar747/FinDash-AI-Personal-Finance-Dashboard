@@ -1,34 +1,16 @@
 // src/components/CsvUploader.jsx
 import React, { useState, useRef, useEffect } from 'react';
-import { transactionsAPI, accountsAPI } from '../services/api';
+import { transactionsAPI } from '../services/api';
 import { FaDownload, FaUpload, FaFolderOpen, FaExclamationCircle } from "react-icons/fa";
 import './CsvUploader.css';
 
-const CsvUploader = ({ onUploadSuccess, userId = 1 }) => {
+const CsvUploader = ({ onUploadSuccess, accounts, userId = 1 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [selectedAccountId, setSelectedAccountId] = useState('');
-  const [accounts, setAccounts] = useState([]);
-  const [accountsLoading, setAccountsLoading] = useState(true);
   const fileInputRef = useRef(null);
-
-  // Fetch accounts on component mount
-  useEffect(() => {
-    fetchAccounts();
-  }, []);
-
-  const fetchAccounts = async () => {
-    try {
-      const response = await accountsAPI.getAll(userId);
-      setAccounts(response.data.accounts || []);
-    } catch (err) {
-      console.error('Error fetching accounts:', err);
-    } finally {
-      setAccountsLoading(false);
-    }
-  };
 
   const handleAccountChange = (e) => {
     setSelectedAccountId(e.target.value);
@@ -134,12 +116,7 @@ const CsvUploader = ({ onUploadSuccess, userId = 1 }) => {
 
       <div className="account-selection-section">
         <label>Select Account *</label>
-        {accountsLoading ? (
-          <div className="loading-accounts">
-            <div className="spinner-small"></div>
-            <span>Loading accounts...</span>
-          </div>
-        ) : accounts.length === 0 ? (
+        {!accounts || accounts.length === 0 ? (
           <div className="no-accounts">
             <span className="warning-text">No accounts available.</span>
             <p className="account-hint">
@@ -156,12 +133,12 @@ const CsvUploader = ({ onUploadSuccess, userId = 1 }) => {
             <option value="">Select an account for this CSV</option>
             {accounts.map(account => (
               <option key={account.id} value={account.id}>
-                {account.account}
+                {account.account} (ID: {account.id})
               </option>
             ))}
           </select>
         )}
-        {accounts.length > 0 && !accountsLoading && !selectedAccountId && (
+        {accounts && accounts.length > 0 && !selectedAccountId && (
           <p className="selection-required">
             ⚠️ Please select an account before uploading a file
           </p>

@@ -238,6 +238,53 @@ def upload_csv():
 
 
 
+@app.route('/transactions/<int:transaction_id>', methods=['PUT'])
+def update_transaction(transaction_id):
+    data = request.get_json()
+    
+    required_fields = ['date', 'description', 'amount', 'category', 'account_id']
+    if not all(field in data for field in required_fields):
+        return jsonify({'error': 'Missing required fields'}), 400
+
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        # Update the transaction ensuring it belongs to user 1
+        query = """
+            UPDATE transactions 
+            SET transaction_date = %s, 
+                transaction_name = %s, 
+                amount = %s, 
+                category = %s, 
+                account_id = %s 
+            WHERE id = %s AND user_id = %s
+        """
+        cur.execute(query, (
+            data['date'], 
+            data['description'], 
+            data['amount'], 
+            data['category'], 
+            data['account_id'], 
+            transaction_id, 
+            1
+        ))
+
+        if cur.rowcount == 0:
+            return jsonify({'error': 'Transaction not found or unauthorized'}), 404
+
+        conn.commit()
+        return jsonify({'message': 'Transaction updated successfully'}), 200
+
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
+
+
+
 @app.route('/transactions/<int:transaction_id>', methods=['DELETE'])
 def delete_transaction(transaction_id):
     try:

@@ -1,13 +1,14 @@
 // src/components/TransactionTable.jsx
 import React, { useState } from 'react';
 import { formatCurrency, formatDate, getCategoryColor } from '../utils/format';
-import { FaTrash } from "react-icons/fa";
+import { FaTrash, FaPencilAlt } from "react-icons/fa";
 import './TransactionTable.css';
 
 const TransactionTable = ({ 
   transactions, 
   onDelete, 
   onDeleteMultiple,
+  onEdit,
 }) => {
   const [selectedRows, setSelectedRows] = useState(new Set());
   const [sortConfig, setSortConfig] = useState({ key: 'date', direction: 'desc' });
@@ -139,17 +140,33 @@ const TransactionTable = ({
                 </td>
                 <td>{transaction.account}</td>
                 <td>
-                  <button
-                    onClick={async () => {
-                      if (window.confirm('Are you sure you want to delete this transaction?')) {
-                        onDelete(transaction.id);
-                      }
-                    }}
-                    className="delete-btn"
-                    title="Delete transaction"
-                  >
-                    <FaTrash />
-                  </button>
+                  <div className="action-buttons" style={{ display: 'flex', gap: '10px' }}>
+                    <button
+                      onClick={() => onEdit(transaction)}
+                      className="edit-btn"
+                      title="Edit transaction"
+                      style={{ 
+                        background: 'none', 
+                        border: 'none', 
+                        color: '#4a90e2', 
+                        cursor: 'pointer',
+                        fontSize: '1rem' 
+                      }}
+                    >
+                      <FaPencilAlt />
+                    </button>
+                    <button
+                      onClick={async () => {
+                        if (window.confirm('Are you sure you want to delete this transaction?')) {
+                          onDelete(transaction.id);
+                        }
+                      }}
+                      className="delete-btn"
+                      title="Delete transaction"
+                    >
+                      <FaTrash />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}

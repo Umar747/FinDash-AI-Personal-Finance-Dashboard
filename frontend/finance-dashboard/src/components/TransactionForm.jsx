@@ -1,11 +1,10 @@
 // src/components/TransactionForm.jsx
 import React, { useEffect, useState } from 'react';
-import { accountsAPI } from '../services/api';
 import './TransactionForm.css';
 
 // Maybe use the categories stuff commented out in a future version, so user can enter category themselves if they want
 // const TransactionForm = ({ onSubmit, categories = [] }) => {
-const TransactionForm = ({ onSubmit, userId = 1 }) => {
+const TransactionForm = ({ onSubmit, accounts, userId = 1 }) => {
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     description: '',
@@ -17,24 +16,6 @@ const TransactionForm = ({ onSubmit, userId = 1 }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [accounts, setAccounts] = useState([]);
-  const [accountsLoading, setAccountsLoading] = useState(true);
-
-  // Fetch accounts on component mount
-  useEffect(() => {
-    fetchAccounts();
-  }, []);
-
-  const fetchAccounts = async () => {
-    try {
-      const response = await accountsAPI.getAll(userId);
-      setAccounts(response.data.accounts || []);
-    } catch (err) {
-      console.error('Error fetching accounts:', err);
-    } finally {
-      setAccountsLoading(false);
-    }
-  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -44,9 +25,32 @@ const TransactionForm = ({ onSubmit, userId = 1 }) => {
     }));
   };
 
+  const handleClear = () => {
+    setFormData({
+      date: new Date().toISOString().split('T')[0],
+      description: '',
+      amount: '',
+      account_id: '',
+    });
+    setError('');
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    
+    // Check if accounts array exists and has data
+    if (!accounts || accounts.length === 0) {
+      setError('Please add a bank account in the Bank Account Management section above before adding transactions.');
+      return;
+    }
+
+    // Check if an account was actually selected
+    if (!formData.account_id) {
+      setError('Please select an account from the dropdown.');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -62,19 +66,15 @@ const TransactionForm = ({ onSubmit, userId = 1 }) => {
       }
 
       // Reset form
-      setFormData({
-        date: new Date().toISOString().split('T')[0],
-        description: '',
-        amount: '',
-        // category: '',
-        account_id: '',
-      });
+      handleClear();
 
       // Show success message
       setSuccess('Transaction added successfully!');
       setTimeout(() => setSuccess(''), 5000);
     } catch (err) {
       console.error(err);
+
+      // Show error message
       setError(err.message || 'Failed to create transaction');
     } finally {
       // Remove success message after 5 seconds
@@ -146,12 +146,7 @@ const TransactionForm = ({ onSubmit, userId = 1 }) => {
 
         <div className="form-group">
           <label>Account</label>
-          {accountsLoading ? (
-            <div className="loading-accounts">
-              <div className="spinner-small"></div>
-              <span>Loading accounts...</span>
-            </div>
-          ) : accounts.length === 0 ? (
+          {!accounts || accounts.length === 0 ? (
             <div className="no-accounts">
               <span className="warning-text">No accounts available.</span>
               <p className="account-hint">
@@ -168,19 +163,34 @@ const TransactionForm = ({ onSubmit, userId = 1 }) => {
               <option value="">Select an account</option>
               {accounts.map(account => (
                 <option key={account.id} value={account.id}>
-                  {account.account}
+                  {account.account} (ID: {account.id})
                 </option>
               ))}
             </select>
           )}
         </div>
 
-        <button type="submit" className="submit-btn" disabled={loading}>
-          {loading ? 'Adding...' : '+ Add Transaction'}
-        </button>
+        <div style={{ 
+          marginTop: '1.5rem', 
+          display: 'flex', 
+          flexDirection: 'row-reverse', 
+          gap: '12px' 
+        }}>
+          <button type="submit" className="submit-btn" disabled={loading} style={{ margin: 0, flex: 1 }}>
+            {loading ? 'Adding...' : '+ Add Transaction'}
+          </button>
 
-        {success && <p className="success-text">{success}</p>}
-        {error && <p className="error-text">{error}</p>}
+          <button 
+            type="button" 
+            onClick={handleClear}
+            className="clear-btn"
+          >
+            Clear
+          </button>
+        </div>
+
+        {success && <p className="success-text" >{success}</p>}
+        {error && <p className="error-text" >{error}</p>}
       </form>
     </div>
   );

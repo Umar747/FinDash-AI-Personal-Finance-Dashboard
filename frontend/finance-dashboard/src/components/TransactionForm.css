@@ -83,14 +83,32 @@
   transform: translateY(-2px);
 }
 
+.clear-btn {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  background-color: white;
+  color: #4a5568;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.95rem;
+}
+
+.clear-btn:hover {
+  background-color: #f7fafc;
+  border-color: #cbd5e0;
+}
+
 .success-text {
   color: green;
-  margin-top: 5px;
+  margin-top: 10px;
 }
 
 .error-text {
   color: red;
-  margin-top: 5px;
+  margin-top: 10px;
 }
 
 .loading-accounts {
