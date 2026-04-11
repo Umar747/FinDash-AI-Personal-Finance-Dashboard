@@ -1,9 +1,11 @@
 // src/pages/HomePage.jsx
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { FaUpload } from 'react-icons/fa';
 import './HomePage.css';
 
 const HomePage = () => {
+  const navigate = useNavigate();
   return (
     <div className="homepage">
       <div className="hero">
@@ -14,16 +16,10 @@ const HomePage = () => {
         </p>
         
         <div className="cta-section">
-          {/* <button className="primary-btn">
-            📊 Go to Analytics
-          </button>
-          <button className="secondary-btn">
-            📁 Upload Statement (Next Step)
-          </button> */}
-          <button className="primary-btn">
+          <button className="primary-btn" onClick={() => navigate('/transactions')}>
             <FaUpload /> Upload Statement
           </button>
-          <button className="secondary-btn">
+          <button className="secondary-btn" onClick={() => navigate('/insights')}>
             Go to Analytics (Next Step)
           </button>
         </div>

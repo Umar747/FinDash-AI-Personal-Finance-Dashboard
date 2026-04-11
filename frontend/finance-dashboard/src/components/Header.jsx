@@ -20,7 +20,7 @@ const Header = () => {
       </div>
       <nav className="nav">
         <Link to="/" className={`nav-btn ${isActive('/')}`}>
-          Dashboard
+          Home
         </Link>
         <Link to="/transactions" className={`nav-btn ${isActive('/transactions')}`}>
           Transactions

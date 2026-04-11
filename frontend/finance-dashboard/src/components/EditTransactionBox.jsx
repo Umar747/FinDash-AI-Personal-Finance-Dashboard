@@ -63,7 +63,7 @@ const EditTransactionBox = ({ transaction, accounts, onClose, onSave }) => {
             <select value={formData.account_id} onChange={e => setFormData({...formData, account_id: e.target.value})} required>
               <option value="">Select Account</option>
               {accounts.map(acc => (
-                <option key={acc.id} value={acc.id}>ID: {acc.id} - {acc.account}</option>
+                <option key={acc.id} value={acc.id}>{acc.account} (ID: {acc.id})</option>
               ))}
             </select>
           </div>
