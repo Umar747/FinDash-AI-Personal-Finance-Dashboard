@@ -10,9 +10,11 @@ import './Insights.css';
 
 const Insights = ({ userId = 1 }) => {
   const [data, setData] = useState([]);
+  const [rawHistoryData, setRawHistoryData] = useState([]);
   const [forecastPieData, setForecastPieData] = useState([]);
   const [pivotDate, setPivotDate] = useState(null);
   const [dateRange, setDateRange] = useState(90);
+  const [pieDateRange, setPieDateRange] = useState(90);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -27,9 +29,11 @@ const Insights = ({ userId = 1 }) => {
 
         const rawHistory = historyRes.data.transactions || [];
         const rawForecasts = forecastRes.data.forecasts || [];
+        setRawHistoryData(rawHistory);
+        
 
         // Filter out "Income" and aggregate by category
-        const categoryMap = rawForecasts
+        const forecastCategoryMap = rawForecasts
           .filter(f => f.category !== 'Income')
           .reduce((acc, f) => {
             const amount = Math.abs(parseFloat(f.predicted_amount));
@@ -37,17 +41,15 @@ const Insights = ({ userId = 1 }) => {
             return acc;
           }, {});
 
-        const pieData = Object.entries(categoryMap).map(([name, value]) => ({
+        const fPieData = Object.entries(forecastCategoryMap).map(([name, value]) => ({
           name,
           value: Math.round(value * 100) / 100
         })).sort((a, b) => b.value - a.value); // Sort by highest spending
 
-        setForecastPieData(pieData);
-
-        console.log(pieData)
+        setForecastPieData(fPieData);
 
         const historyMap = rawHistory.reduce((acc, t) => {
-          const date = t.date.split('T')[0];
+          const date = t.date.split(' ')[0];
           acc[date] = (acc[date] || 0) + parseFloat(t.amount);
           return acc;
         }, {});
@@ -61,7 +63,7 @@ const Insights = ({ userId = 1 }) => {
         let runningBalance = 0;
         const processed = [];
 
-        // 3. Process Sorted History
+        // Process sorted history
         const sortedHistoryDates = Object.keys(historyMap).sort((a, b) => new Date(a) - new Date(b));
         sortedHistoryDates.forEach(date => {
           runningBalance += historyMap[date];
@@ -72,12 +74,12 @@ const Insights = ({ userId = 1 }) => {
           });
         });
 
-        // Identify the pivot (The "Today" overlap)
+        // Identify the pivot (the current day overlap)
         if (processed.length > 0) {
           const lastPoint = processed[processed.length - 1];
           setPivotDate(lastPoint.date); // Save this for filtering and the red line
 
-          // 4. Create the Bridge Point for the chart
+          // Create the bridge point for the chart
           processed.push({
             date: lastPoint.date,
             balance: lastPoint.balance,
@@ -85,7 +87,7 @@ const Insights = ({ userId = 1 }) => {
           });
         }
 
-        // 5. Process Sorted Forecasts
+        // Process sorted forecasts
         const sortedForecastDates = Object.keys(forecastMap).sort((a, b) => new Date(a) - new Date(b));
         sortedForecastDates.forEach(date => {
           runningBalance += forecastMap[date];
@@ -107,24 +109,42 @@ const Insights = ({ userId = 1 }) => {
     loadData();
   }, [userId]);
 
-  const filteredData = useMemo(() => {
-    if (data.length === 0 || !pivotDate) return [];
-    
-    // If dateRange is 0 (All Time), skip the filtering logic and return everything
-    if (dateRange === 0) return data;
+  // Derive historical pie data based on selected pieDateRange
+  const historicalPieData = useMemo(() => {
+    if (!rawHistoryData.length || !pivotDate) return [];
 
     const anchor = new Date(pivotDate);
     const cutoff = new Date(pivotDate);
-    cutoff.setDate(anchor.getDate() - dateRange);
+    if (pieDateRange !== 0) {
+        cutoff.setDate(anchor.getDate() - pieDateRange);
+    }
 
-    return data.filter(d => {
-      // Always show forecast data
-      if (d.type === 'forecast') return true;
-      
-      // Only filter historical data based on the dateRange
-      return new Date(d.date) >= cutoff;
-    });
+    const categoryMap = rawHistoryData
+      .filter(t => {
+        const tDate = new Date(t.date);
+        const isWithinRange = pieDateRange === 0 || tDate >= cutoff;
+        return t.category !== 'Income' && parseFloat(t.amount) < 0 && isWithinRange;
+      })
+      .reduce((acc, t) => {
+        const amount = Math.abs(parseFloat(t.amount));
+        acc[t.category] = (acc[t.category] || 0) + amount;
+        return acc;
+      }, {});
+
+    return Object.entries(categoryMap)
+      .map(([name, value]) => ({ name, value: Math.round(value * 100) / 100 }))
+      .sort((a, b) => b.value - a.value);
+  }, [rawHistoryData, pieDateRange, pivotDate]);
+
+  const filteredChartData = useMemo(() => {
+    if (data.length === 0 || !pivotDate || dateRange === 0) return data;
+    const cutoff = new Date(pivotDate);
+    cutoff.setDate(new Date(pivotDate).getDate() - dateRange);
+    return data.filter(d => d.type === 'forecast' || new Date(d.date) >= cutoff);
   }, [data, dateRange, pivotDate]);
+
+
+
 
   if (loading) return <div className="insights-state">Generating AI Insights...</div>;
   if (error) return <div className="insights-state error">⚠️ {error}</div>;
@@ -139,15 +159,15 @@ const Insights = ({ userId = 1 }) => {
       <div className="chart-card">
         <h3>Combined Cash Flow</h3>
         <div className="insights-controls">
-          <button className={dateRange === 30 ? 'active' : ''} onClick={() => setDateRange(30)}>1 Month History</button>
-          <button className={dateRange === 90 ? 'active' : ''} onClick={() => setDateRange(90)}>3 Months History</button>
-          <button className={dateRange === 180 ? 'active' : ''} onClick={() => setDateRange(180)}>6 Months History</button>
-          <button className={dateRange === 365 ? 'active' : ''} onClick={() => setDateRange(365)}>12 Months History</button>
+          <button className={dateRange === 30 ? 'active' : ''} onClick={() => setDateRange(30)}>1 Month</button>
+          <button className={dateRange === 90 ? 'active' : ''} onClick={() => setDateRange(90)}>3 Months</button>
+          <button className={dateRange === 180 ? 'active' : ''} onClick={() => setDateRange(180)}>6 Months</button>
+          <button className={dateRange === 365 ? 'active' : ''} onClick={() => setDateRange(365)}>12 Months</button>
           <button className={dateRange === 0 ? 'active' : ''} onClick={() => setDateRange(0)}>All Time</button>
         </div>
         <div className="chart-container">
-          <ResponsiveContainer width="100%" height={450}>
-            <ComposedChart data={filteredData}>
+          <ResponsiveContainer width="100%" height={400}>
+            <ComposedChart data={filteredChartData}>
               <defs>
                 <linearGradient id="historyGradient" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#667eea" stopOpacity={0.3}/>
@@ -211,22 +231,29 @@ const Insights = ({ userId = 1 }) => {
         </div>
       </div>
 
-      <div className="chart-card pie-section">
-        <h3>Predicted Spending Distribution (Next 90 Days)</h3>
-        <div className="chart-container pie-container">
-          <ResponsiveContainer width="100%" height={400}>
+      <div className="chart-card pie-comparison-section">
+        <div className="pie-column">
+          <h3>Historical Spending</h3>
+          <div className="insights-controls">
+            <button className={pieDateRange === 30 ? 'active' : ''} onClick={() => setPieDateRange(30)}>1 Month</button>
+            <button className={pieDateRange === 90 ? 'active' : ''} onClick={() => setPieDateRange(90)}>3 Months</button>
+            <button className={pieDateRange === 180 ? 'active' : ''} onClick={() => setPieDateRange(180)}>6 Months</button>
+            <button className={pieDateRange === 365 ? 'active' : ''} onClick={() => setPieDateRange(365)}>12 Months</button>
+            <button className={pieDateRange === 0 ? 'active' : ''} onClick={() => setPieDateRange(0)}>All Time</button>
+          </div>
+          <ResponsiveContainer width="100%" height={350}>
             <PieChart>
               <Pie
-                data={forecastPieData}
+                data={historicalPieData}
                 cx="50%"
                 cy="50%"
-                innerRadius={80}
-                outerRadius={120}
+                innerRadius={60}
+                outerRadius={100}
                 paddingAngle={5}
                 dataKey="value"
                 label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
               >
-                {forecastPieData.map((entry, index) => (
+                {historicalPieData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={getCategoryColor(entry.name)} />
                 ))}
               </Pie>
@@ -234,6 +261,36 @@ const Insights = ({ userId = 1 }) => {
               <Legend verticalAlign="bottom" height={36}/>
             </PieChart>
           </ResponsiveContainer>
+        </div>
+
+        <div className="arrow-column">
+          <div className="trajectory-arrow">➔</div>
+          <span className="arrow-label">Forecast</span>
+        </div>
+
+        <div className="pie-column">
+          <h3>Predicted Spending Distribution (Next 90 Days)</h3>
+          <div className="placeholder-spacer"></div> {/* Matches the height of the control buttons for alignment */}
+            <ResponsiveContainer width="100%" height={350}>
+              <PieChart>
+                <Pie
+                  data={forecastPieData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={100}
+                  paddingAngle={5}
+                  dataKey="value"
+                  label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                >
+                  {forecastPieData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={getCategoryColor(entry.name)} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(value) => formatCurrency(value)} />
+                <Legend verticalAlign="bottom" height={36}/>
+              </PieChart>
+            </ResponsiveContainer>
         </div>
       </div>
 

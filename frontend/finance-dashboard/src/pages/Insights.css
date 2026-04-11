@@ -53,23 +53,6 @@
   width: 100%;
 }
 
-/* Specific styling for the pie chart section */
-.pie-section {
-  margin-top: 2rem;
-}
-
-.pie-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.recharts-pie-label-text {
-  font-size: 12px;
-  font-weight: 500;
-  fill: #4b5563;
-}
-
 .insights-state {
   display: flex;
   align-items: center;
@@ -81,4 +64,56 @@
 
 .insights-state.error {
   color: #dc2626;
+}
+
+.pie-comparison-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 2rem;
+  padding: 2rem;
+}
+
+.pie-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.arrow-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 1rem;
+  color: #667eea;
+}
+
+.trajectory-arrow {
+  font-size: 3rem;
+  line-height: 1;
+}
+
+.arrow-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: -0.5rem;
+}
+
+.placeholder-spacer {
+  height: 42px;
+  margin-bottom: 2rem;
+}
+
+.pie-column .insights-controls {
+  margin-bottom: 2rem;
+  gap: 0.25rem;
+}
+
+.pie-column .insights-controls button {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.8rem;
 }
