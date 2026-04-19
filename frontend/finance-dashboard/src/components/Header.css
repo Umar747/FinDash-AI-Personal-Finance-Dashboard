@@ -1,13 +1,19 @@
 /* src/components/Header.css */
 .header {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  /* background: linear-gradient(135deg, #2d56c6 0%, #4b92a2 100%); */
   color: white;
-  padding: 1rem 2rem;
+  padding: 1rem 0;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  width: 100%;
+}
+
+.header-container {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  padding: 0 2rem;
+  box-sizing: border-box;
 }
 
 .logo h1 {
@@ -22,12 +28,6 @@
   opacity: 0.9;
 }
 
-.nav {
-  display: flex;
-  gap: 1rem;
-}
-
-/* src/components/Header.css - Update for links */
 .nav-btn {
   background: rgba(255, 255, 255, 0.2);
   border: none;
@@ -49,4 +49,25 @@
 .nav-btn.active {
   background: white;
   color: #667eea;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.logout-button {
+  background-color: #ff4d4d;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.3s;
+}
+
+.logout-button:hover {
+  background-color: #cc0000;
 }

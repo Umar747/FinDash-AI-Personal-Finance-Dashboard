@@ -9,6 +9,8 @@ neuralprophet==0.9.0
 flask==3.1.2
 flask-cors==6.0.2
 psycopg2-binary==2.9.11
+PyJWT==2.12.1
+bcrypt==5.0.0
 
 # NLP Libraries
 nltk==3.8.1

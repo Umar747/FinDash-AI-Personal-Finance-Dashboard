@@ -4,7 +4,7 @@ import { transactionsAPI } from '../services/api';
 import { FaDownload, FaUpload, FaFolderOpen, FaExclamationCircle } from "react-icons/fa";
 import './CsvUploader.css';
 
-const CsvUploader = ({ onUploadSuccess, accounts, userId = 1 }) => {
+const CsvUploader = ({ onUploadSuccess, accounts }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState('');
@@ -207,7 +207,7 @@ const CsvUploader = ({ onUploadSuccess, accounts, userId = 1 }) => {
       <div className="csv-guide">
         <h4>CSV Format Guide:</h4>
         <ul>
-          <li>Required columns: <code>Date</code>, <code>Description</code>, <code>Amount</code></li>
+          <li>Required columns: <code>Date</code>, <code>Name</code>, <code>Amount</code></li>
           <li>Date format: <code>YYYY-MM-DD</code> or <code>DD/MM/YYYY</code></li>
           <li>Amount format: Positive for credits, negative for debits</li>
           <li><a href="sample-statement.csv" download><FaDownload /> Download sample CSV</a></li>

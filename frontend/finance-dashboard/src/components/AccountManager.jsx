@@ -4,7 +4,7 @@ import { FaChevronDown, FaChevronUp, FaPlus, FaTrash, FaCreditCard, FaBuilding }
 import { accountsAPI } from '../services/api';
 import './AccountManager.css';
 
-const AccountManager = ({ userId = 1, accounts, onAccountChange }) => { // Default userId of 1 for now
+const AccountManager = ({ accounts, onAccountChange }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -29,7 +29,6 @@ const AccountManager = ({ userId = 1, accounts, onAccountChange }) => { // Defau
     setIsCreating(true);
     try {
       await accountsAPI.create({
-        user_id: userId,
         account_name: newAccountName.trim()
       });
       

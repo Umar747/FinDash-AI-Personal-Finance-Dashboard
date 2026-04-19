@@ -20,7 +20,7 @@ const HomePage = () => {
             <FaUpload /> Upload Statement
           </button>
           <button className="secondary-btn" onClick={() => navigate('/insights')}>
-            Go to Analytics (Next Step)
+            Go to Insights (Next Step)
           </button>
         </div>
       </div>

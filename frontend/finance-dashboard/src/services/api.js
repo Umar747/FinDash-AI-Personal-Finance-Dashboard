@@ -12,6 +12,24 @@ const api = axios.create({
   },
 });
 
+// Request interceptor to add JWT to headers
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// Auth API endpoints
+export const authAPI = {
+  signup: (userData) => api.post('/auth/signup', userData),
+  login: (credentials) => api.post('/auth/login', credentials),
+};
+
 // Transactions API endpoints
 export const transactionsAPI = {
   // Get all transactions with filters
@@ -42,10 +60,10 @@ export const transactionsAPI = {
 
 export const accountsAPI = {
   // Get all accounts for a user
-  getAll: (userId) => api.get(`/accounts/${userId}`),
+  getAll: () => api.get('/accounts'),
   
   // Get a single account for a user
-  getById: (userId, accountId) => api.get(`/accounts/${userId}/${accountId}`),
+  getById: (accountId) => api.get(`/accounts/${accountId}`),
   
   // Create new account
   create: (accountData) => api.post('/accounts', accountData),
@@ -56,7 +74,7 @@ export const accountsAPI = {
 
 export const analyticsAPI = {
   // Triggers the Random Forest forecasting model
-  getForecast: (userId) => api.get(`/transactions/forecast/${userId}`),
+  getForecast: () => api.get('/transactions/forecast'),
   
   // Get existing transactions
   getHistory: () => api.get('/transactions'),
@@ -66,3 +84,5 @@ export const agentAPI = {
   // Sends a message to the local Llama AI agent and receives a task-oriented response.
   ask: (message) => api.post('/api/chat', { message }),
 };
+
+export default api;

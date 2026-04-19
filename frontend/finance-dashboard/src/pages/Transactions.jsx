@@ -19,7 +19,6 @@ const Transactions = () => {
     search: '',
   });
 
-  const USER_ID = 1; // Hardcoded user_id
   const CATEGORIES = [
     "Income", "Transport", "Groceries", "Dining", 
     "Shopping & Retail", "Entertainment", "Bills"
@@ -36,7 +35,7 @@ const Transactions = () => {
 
   const fetchAccounts = async () => {
       try {
-        const response = await accountsAPI.getAll(USER_ID);
+        const response = await accountsAPI.getAll();
         setAccounts(response.data.accounts || []);
       } catch (err) {
         console.error('Error fetching accounts:', err);
@@ -140,7 +139,6 @@ const Transactions = () => {
       <div className="content-grid">
         <div className="left-column">
           <AccountManager 
-            userId={USER_ID} // Replace with actual user ID
             accounts={accounts} // Pass down lifted state
             onAccountChange={handleAccountChange}
           />

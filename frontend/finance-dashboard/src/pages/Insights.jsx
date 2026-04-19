@@ -8,7 +8,7 @@ import { analyticsAPI, transactionsAPI } from '../services/api';
 import { formatCurrency, getCategoryColor } from '../utils/format';
 import './Insights.css';
 
-const Insights = ({ userId = 1 }) => {
+const Insights = () => {
   const [data, setData] = useState([]);
   const [rawHistoryData, setRawHistoryData] = useState([]);
   const [forecastPieData, setForecastPieData] = useState([]);
@@ -24,7 +24,7 @@ const Insights = ({ userId = 1 }) => {
         setLoading(true);
         const [historyRes, forecastRes] = await Promise.all([
           transactionsAPI.getAll(),
-          analyticsAPI.getForecast(userId)
+          analyticsAPI.getForecast()
         ]);
 
         const rawHistory = historyRes.data.transactions || [];
@@ -107,7 +107,7 @@ const Insights = ({ userId = 1 }) => {
     };
 
     loadData();
-  }, [userId]);
+  }, []);
 
   // Derive historical pie data based on selected pieDateRange
   const historicalPieData = useMemo(() => {

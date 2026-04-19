@@ -4,7 +4,7 @@ import './TransactionForm.css';
 
 // Maybe use the categories stuff commented out in a future version, so user can enter category themselves if they want
 // const TransactionForm = ({ onSubmit, categories = [] }) => {
-const TransactionForm = ({ onSubmit, accounts, userId = 1 }) => {
+const TransactionForm = ({ onSubmit, accounts }) => {
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     description: '',
