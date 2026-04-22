@@ -14,7 +14,7 @@ nlp = NLPDataProcessor()
 model.load_model("/Users/umarali/Library/CloudStorage/OneDrive-UniversityCollegeLondon/Third Year/Final Year Project/Personal-Finance-Dashboard/transaction_classifier.joblib")
 
 @tool
-def get_recent_transactions(input_str: str = "5"):
+def get_recent_transactions(input_str: str = "5", user_id: int = None):
     """
     Retrieves the most recent transactions from the database. 
     Input format: num_transactions=limit (e.g., 'num_transactions=5')
@@ -31,15 +31,14 @@ def get_recent_transactions(input_str: str = "5"):
     cur = conn.cursor()
     try:
         # Database query using the extracted limit
-        # User ID is hardcoded to 1 for now
         query = """
             SELECT t.transaction_date, t.transaction_name, t.amount, t.category 
             FROM transactions t 
-            WHERE t.user_id = 1 
+            WHERE t.user_id = %s 
             ORDER BY t.transaction_date DESC 
             LIMIT %s
         """
-        cur.execute(query, (limit,))
+        cur.execute(query, (user_id, limit,))
         rows = cur.fetchall()
         
         if not rows:
@@ -61,7 +60,7 @@ def get_recent_transactions(input_str: str = "5"):
 
 
 @tool
-def create_new_transaction(input_str: str):
+def create_new_transaction(input_str: str, user_id: int = None):
     """
     Creates a new transaction. 
     Input format: description="name", amount=value, account_id=id, date="YYYY-MM-DD" (e.g., 'description="Coffee", amount=1.50, account_id=1, date="2026-01-01"')
@@ -87,6 +86,11 @@ def create_new_transaction(input_str: str):
 
         conn = get_db_connection()
         cur = conn.cursor()
+
+        # Security check to verify the account belongs to the user
+        cur.execute("SELECT id FROM accounts WHERE id = %s AND user_id = %s", (account_id, user_id))
+        if not cur.fetchone():
+            return f"Observation: Error - Account ID {account_id} does not exist or does not belong to you."
         
         # Use the ML model for category prediction
         from server import model, nlp 
@@ -95,7 +99,7 @@ def create_new_transaction(input_str: str):
         cur.execute("""
             INSERT INTO transactions (user_id, account_id, transaction_name, amount, transaction_date, category)
             VALUES (%s, %s, %s, %s, %s, %s) RETURNING id
-        """, (1, account_id, description, amount, date, category))
+        """, (user_id, account_id, description, amount, date, category))
         
         new_id = cur.fetchone()[0]
         conn.commit()
@@ -110,26 +114,8 @@ def create_new_transaction(input_str: str):
 
 
 
-# @tool
-# def update_transaction_category(transaction_id: int, new_category: str):
-#     """Updates the category for a specific transaction ID. USE WITH CAUTION."""
-#     # Will implement Human-In-The-Loop for this later
-#     conn = get_db_connection()
-#     cur = conn.cursor()
-#     try:
-#         cur.execute("UPDATE transactions SET category = %s WHERE id = %s AND user_id = 1", (new_category, transaction_id))
-#         conn.commit()
-#         return f"Successfully updated transaction {transaction_id} to {new_category}"
-#     except Exception as e:
-#         return f"Error: {str(e)}"
-#     finally:
-#         cur.close()
-#         conn.close()
-
-
-
 @tool
-def delete_transaction(input_str: str):
+def delete_transaction(input_str: str, user_id: int = None):
     """
     Deletes a transaction from the database given its ID.
     Input format: transaction_id=ID (e.g., 'transaction_id=42')
@@ -149,8 +135,7 @@ def delete_transaction(input_str: str):
         conn = get_db_connection()
         cur = conn.cursor()
         
-        # Use user_id=1 for now
-        cur.execute("DELETE FROM transactions WHERE id = %s AND user_id = %s", (transaction_id, 1))
+        cur.execute("DELETE FROM transactions WHERE id = %s AND user_id = %s", (transaction_id, user_id))
         
         if cur.rowcount == 0:
             return f"Observation: Error - Transaction with ID {transaction_id} not found."
@@ -166,59 +151,8 @@ def delete_transaction(input_str: str):
 
 
 
-# @tool
-# def search_transactions(query_params: str):
-#     """
-#     Searches transactions based on criteria. 
-#     Input format: category='Name', name='Merchant', days=30
-#     - category: Filter by category (e.g. 'Entertainment', 'Groceries')
-#     - name: Search for text in the merchant name (e.g. 'Netflix')
-#     - days: Only look back this many days from today.
-#     """
-#     try:
-#         # 1. Extraction using Regex
-#         cat_match = re.search(r"category=['\"](.*?)['\"]", query_params)
-#         name_match = re.search(r"name=['\"](.*?)['\"]", query_params)
-#         days_match = re.search(r"days=(\d+)", query_params)
-
-#         # 2. Build Dynamic SQL
-#         base_query = "SELECT transaction_date, transaction_name, amount, category FROM transactions WHERE user_id = 1"
-#         params = []
-
-#         if cat_match:
-#             base_query += " AND category ILIKE %s"
-#             params.append(cat_match.group(1))
-        
-#         if name_match:
-#             base_query += " AND transaction_name ILIKE %s"
-#             params.append(f"%{name_match.group(1)}%") # Partial match
-
-#         if days_match:
-#             base_query += " AND transaction_date >= CURRENT_DATE - INTERVAL '%s days'"
-#             params.append(int(days_match.group(1)))
-
-#         base_query += " ORDER BY transaction_date DESC"
-
-#         # 3. Database Execution
-#         conn = get_db_connection()
-#         cur = conn.cursor()
-#         cur.execute(base_query, tuple(params))
-#         rows = cur.fetchall()
-        
-#         if not rows:
-#             return "Observation: No transactions found matching those criteria."
-
-#         results = "\n".join([f"{r[0]}: {r[1]} - £{r[2]} ({r[3]})" for r in rows])
-#         return f"Observation: Found the following transactions:\n{results}"
-
-#     except Exception as e:
-#         return f"Observation: Error during search: {str(e)}"
-#     finally:
-#         cur.close()
-#         conn.close()
-
 @tool
-def search_transactions(input_str: str):
+def search_transactions(input_str: str, user_id: int = None):
     """
     Searches transactions based on user criteria. 
     All parameters are optional.
@@ -234,8 +168,8 @@ def search_transactions(input_str: str):
         max_match = re.search(r"max_amount=(-?\d+(?:\.\d+)?)", input_str)
 
         # Build Dynamic SQL query
-        query_parts = ["SELECT transaction_date, transaction_name, amount, category FROM transactions WHERE user_id = 1"]
-        params = []
+        query_parts = ["SELECT transaction_date, transaction_name, amount, category FROM transactions WHERE user_id = %s"]
+        params = [user_id]
 
         # Check if match exists AND group(1) is not an empty string
         if cat_match and cat_match.group(1).strip():
@@ -283,4 +217,4 @@ def search_transactions(input_str: str):
         conn.close()
 
 # Export list of tools
-tools = [create_new_transaction, delete_transaction, search_transactions]
+tools = [get_recent_transactions, create_new_transaction, delete_transaction, search_transactions]

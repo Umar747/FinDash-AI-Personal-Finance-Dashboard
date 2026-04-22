@@ -3,6 +3,7 @@ from langchain.agents import AgentExecutor, create_react_agent, load_tools
 from langchain.prompts import PromptTemplate
 from langchain.callbacks.base import BaseCallbackHandler
 from agent_tools import tools
+from functools import partial
 
 class ToolCallLogger(BaseCallbackHandler):
     def on_tool_start(self, serialized: dict, input_str: str, **kwargs) -> None:
@@ -54,30 +55,38 @@ prompt = PromptTemplate.from_template(template)
 # Initialise the local Llama model using Ollama
 llm = ChatOllama(model="llama3.1:8b", temperature=0)
 
-math_tool = load_tools(["llm-math"], llm=llm)
-tools = tools + math_tool
-
-# Bind STOP sequences. 
-# This is the most important part for stopping loops as it prevents the LLM from writing the "Observation:" text itself.
-llm_with_stop = llm.bind(stop=["Observation:", "Observation: ", "\nObservation:"])
-
-# Construct the ReAct agent using the LLM with the stop sequence
-agent = create_react_agent(llm_with_stop, tools, prompt)
-
-# Create the executor
-agent_executor = AgentExecutor(
-    agent=agent, 
-    tools=tools, 
-    verbose=True, 
-    handle_parsing_errors=True,
-    max_iterations=5,
-    early_stopping_method="force"
-)
-
-def ask_finance_agent(query: str):
+def ask_finance_agent(query: str, user_id: int):
     """
     Main entry point for the Flask server to interact with the AI Agent.
     """
+    # Bind the user_id to the tools so the agent doesn't need to handle it
+    bound_tools = []
+    for t in tools:
+        # Wrap the tool's function with the user_id
+        bound_tool = t.copy()
+        bound_tool.func = partial(t.func, user_id=user_id)
+        bound_tools.append(bound_tool)
+
+    math_tool = load_tools(["llm-math"], llm=llm)
+    all_tools = bound_tools + math_tool
+
+    # Bind STOP sequences. 
+    # This is the most important part for stopping loops as it prevents the LLM from writing the "Observation:" text itself.
+    llm_with_stop = llm.bind(stop=["Observation:", "Observation: ", "\nObservation:"])
+
+    # Construct the ReAct agent using the LLM with the stop sequence
+    agent = create_react_agent(llm_with_stop, all_tools, prompt)
+
+    # Create the executor
+    agent_executor = AgentExecutor(
+        agent=agent, 
+        tools=all_tools, 
+        verbose=True, 
+        handle_parsing_errors=True,
+        max_iterations=5,
+        early_stopping_method="force"
+    )
+
     try:
         response = agent_executor.invoke(
             {"input": query}, 

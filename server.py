@@ -596,7 +596,7 @@ def chat_with_agent(current_user_id):
     user_message = data.get('message')
     
     try:
-        agent_response = ask_finance_agent(user_message)
+        agent_response = ask_finance_agent(user_message, current_user_id)
         return jsonify({"response": agent_response})
     except Exception as e:
         print("--- AGENT ERROR ---")
