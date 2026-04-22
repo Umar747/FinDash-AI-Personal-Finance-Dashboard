@@ -6,6 +6,7 @@
 .coverage
 saved_commands.sql
 transaction_classifier.joblib
+svm_transaction_classifier.joblib
 commands.md
 test.py
 todo.md

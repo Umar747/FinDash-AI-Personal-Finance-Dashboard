@@ -391,7 +391,7 @@ class FinancialTransactionClassifier:
 
 # Save a Model
 
-# model = FinancialTransactionClassifier()
+# model = FinancialTransactionClassifier(model_type='logistic_regression')
 # nlp = NLPDataProcessor()
 # reader = CSVReader()
 # transactions, categories = reader.read_dataset("data/dataset.csv")

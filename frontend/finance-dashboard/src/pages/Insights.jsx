@@ -233,7 +233,7 @@ const Insights = () => {
 
       <div className="chart-card pie-comparison-section">
         <div className="pie-column">
-          <h3>Historical Spending</h3>
+          <h3>Historical Spending Distribution</h3>
           <div className="insights-controls">
             <button className={pieDateRange === 30 ? 'active' : ''} onClick={() => setPieDateRange(30)}>1 Month</button>
             <button className={pieDateRange === 90 ? 'active' : ''} onClick={() => setPieDateRange(90)}>3 Months</button>
