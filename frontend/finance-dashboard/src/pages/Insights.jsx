@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { 
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
   AreaChart, Area, ReferenceLine, Line, ComposedChart, Legend, 
-  PieChart, Pie, Cell 
+  PieChart, Pie, Cell, Bar, BarChart 
 } from 'recharts';
 import { analyticsAPI, transactionsAPI } from '../services/api';
 import { formatCurrency, getCategoryColor } from '../utils/format';
@@ -12,9 +12,11 @@ const Insights = () => {
   const [data, setData] = useState([]);
   const [rawHistoryData, setRawHistoryData] = useState([]);
   const [forecastPieData, setForecastPieData] = useState([]);
+  const [monthlyStats, setMonthlyStats] = useState([]);
   const [pivotDate, setPivotDate] = useState(null);
   const [dateRange, setDateRange] = useState(90);
   const [pieDateRange, setPieDateRange] = useState(90);
+  const [savingsDateRange, setSavingsDateRange] = useState(180);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -31,8 +33,36 @@ const Insights = () => {
         const rawForecasts = forecastRes.data.forecasts || [];
         setRawHistoryData(rawHistory);
         
+        // Process monthly savings data
+        const monthlyMap = rawHistory.reduce((acc, t) => {
+          const date = new Date(t.date);
+          const monthKey = date.toLocaleDateString('en-GB', { month: 'short', year: '2-digit' });
+          const sortKey = date.toISOString().substring(0, 7); // yyyy-mm for sorting
 
-        // Filter out "Income" and aggregate by category
+          if (!acc[monthKey]) {
+            acc[monthKey] = { name: monthKey, income: 0, expenses: 0, sortKey };
+          }
+          
+          const amt = parseFloat(t.amount);
+          if (amt > 0) {
+            acc[monthKey].income += amt;
+          } else {
+            acc[monthKey].expenses += Math.abs(amt);
+          }
+          
+          return acc;
+        }, {});
+
+        const processedMonthly = Object.values(monthlyMap)
+          .sort((a, b) => a.sortKey.localeCompare(b.sortKey))
+          .map(m => ({
+            ...m,
+            savings: Math.round((m.income - m.expenses) * 100) / 100,
+            savingsRate: m.income > 0 ? Math.round(((m.income - m.expenses) / m.income) * 100) : 0
+          }));
+        setMonthlyStats(processedMonthly);
+
+        // Filter out Income and aggregate by category
         const forecastCategoryMap = rawForecasts
           .filter(f => f.category !== 'Income')
           .reduce((acc, f) => {
@@ -77,7 +107,7 @@ const Insights = () => {
         // Identify the pivot (the current day overlap)
         if (processed.length > 0) {
           const lastPoint = processed[processed.length - 1];
-          setPivotDate(lastPoint.date); // Save this for filtering and the red line
+          setPivotDate(lastPoint.date); // Save this for filtering
 
           // Create the bridge point for the chart
           processed.push({
@@ -108,6 +138,36 @@ const Insights = () => {
 
     loadData();
   }, []);
+
+  // Get burn rate data (current month spent vs AI forecast)
+    const burnRateData = useMemo(() => {
+      if (!pivotDate || !rawHistoryData.length) return [];
+      
+      const now = new Date(pivotDate);
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      
+      // Aggregate spending this month
+      const actualMap = rawHistoryData
+        .filter(t => new Date(t.date) >= startOfMonth && t.category !== 'Income' && parseFloat(t.amount) < 0)
+        .reduce((acc, t) => {
+          acc[t.category] = (acc[t.category] || 0) + Math.abs(parseFloat(t.amount));
+          return acc;
+        }, {});
+  
+      // Comparison against predicted
+      return forecastPieData.slice(0, 6).map(item => ({
+        name: item.name,
+        spent: Math.round((actualMap[item.name] || 0) * 100) / 100,
+        forecast: Math.round((item.value / 3) * 100) / 100 // Average per month
+      }));
+    }, [rawHistoryData, pivotDate, forecastPieData]);
+  
+    // Filters for savings chart
+    const filteredSavingsData = useMemo(() => {
+      if (savingsDateRange === 0) return monthlyStats;
+      const monthsToShow = Math.floor(savingsDateRange / 30);
+      return monthlyStats.slice(-monthsToShow);
+    }, [monthlyStats, savingsDateRange]);
 
   // Derive historical pie data based on selected pieDateRange
   const historicalPieData = useMemo(() => {
@@ -142,6 +202,7 @@ const Insights = () => {
     cutoff.setDate(new Date(pivotDate).getDate() - dateRange);
     return data.filter(d => d.type === 'forecast' || new Date(d.date) >= cutoff);
   }, [data, dateRange, pivotDate]);
+
 
 
 
@@ -291,6 +352,51 @@ const Insights = () => {
                 <Legend verticalAlign="bottom" height={36}/>
               </PieChart>
             </ResponsiveContainer>
+        </div>
+      </div>
+
+      <div className="insights-grid">
+        <div className="chart-card">
+          <h3>Monthly Savings & Savings Rate</h3>
+          <div className="insights-controls">
+            <button className={savingsDateRange === 30 ? 'active' : ''} onClick={() => setSavingsDateRange(30)}>1 Month</button>
+            <button className={savingsDateRange === 90 ? 'active' : ''} onClick={() => setSavingsDateRange(90)}>3 Months</button>
+            <button className={savingsDateRange === 180 ? 'active' : ''} onClick={() => setSavingsDateRange(180)}>6 Months</button>
+            <button className={savingsDateRange === 365 ? 'active' : ''} onClick={() => setSavingsDateRange(365)}>12 Months</button>
+            <button className={savingsDateRange === 0 ? 'active' : ''} onClick={() => setSavingsDateRange(0)}>All Time</button>
+          </div>
+          <div className="chart-container">
+            <ResponsiveContainer width="100%" height={300}>
+              <ComposedChart data={filteredSavingsData}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                <XAxis dataKey="name" tick={{fontSize: 12, fill: '#6B7280'}} />
+                <YAxis yAxisId="left" tick={{fontSize: 12, fill: '#6B7280'}} tickFormatter={(val) => `£${val}`} />
+                <YAxis yAxisId="right" orientation="right" tick={{fontSize: 12, fill: '#10B981'}} tickFormatter={(val) => `${val}%`} />
+                <Tooltip formatter={(value, name) => name === 'Savings Rate' ? [`${value}%`, name] : [formatCurrency(value), name]} />
+                <Legend />
+                <Bar yAxisId="left" name="Savings" dataKey="savings" fill="#667eea" radius={[4, 4, 0, 0]} />
+                <Line yAxisId="right" name="Savings Rate" type="monotone" dataKey="savingsRate" stroke="#10B981" strokeWidth={3} dot={{ r: 4 }} />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="chart-card">
+          <h3>Category Burn Rate vs. AI Budget</h3>
+          <p className="card-desc">Actual spending this month vs. predicted monthly average.</p>
+          <div className="chart-container">
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={burnRateData} layout="vertical" margin={{ left: 30, right: 30 }}>
+                <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#e5e7eb" />
+                <XAxis type="number" hide />
+                <YAxis dataKey="name" type="category" tick={{fontSize: 12, fill: '#6B7280'}} width={80} />
+                <Tooltip formatter={(value) => formatCurrency(value)} />
+                <Legend />
+                <Bar name="AI Predicted" dataKey="forecast" fill="#94A3B8" radius={[0, 4, 4, 0]} barSize={20} />
+                <Bar name="Actual Spent" dataKey="spent" fill="#DC2626" radius={[0, 4, 4, 0]} barSize={20} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </div>
 
