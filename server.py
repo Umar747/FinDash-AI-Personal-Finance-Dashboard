@@ -43,7 +43,7 @@ def allowed_file(filename):
 model = FinancialTransactionClassifier()
 nlp = NLPDataProcessor()
 reader = CSVReader()
-model.load_model("/Users/umarali/Library/CloudStorage/OneDrive-UniversityCollegeLondon/Third Year/Final Year Project/Personal-Finance-Dashboard/transaction_classifier.joblib")
+model.load_model("/Users/umarali/Library/CloudStorage/OneDrive-UniversityCollegeLondon/Third Year/Final Year Project/Personal-Finance-Dashboard/transformer_transaction_classifier.joblib")
 
 # transactions, categories = reader.read_dataset("data/dataset.csv")
 # features = nlp.transform_embeddings(transactions)
@@ -173,7 +173,18 @@ def create_transaction(current_user_id):
         conn = get_db_connection()
         cur = conn.cursor()
 
-        cur.execute("INSERT INTO transactions (user_id, account_id, transaction_name, amount, transaction_date, category) VALUES (%s, %s, %s, %s, %s, %s) RETURNING id", (current_user_id, data['account_id'], data['description'], data['amount'], data['date'], model.predict_single(nlp.transform_embeddings([data['description']])[0]).get("predicted_category")))
+        # Check if amount is positive for Income category
+        amount = float(data['amount'])
+        if amount > 0:
+            category = "Income"
+        else:
+            # Run ML prediction for negative amounts
+            embeddings = nlp.transform_embeddings([data['description']])[0]
+            category = model.predict_single(embeddings).get("predicted_category")
+
+        cur.execute(
+            "INSERT INTO transactions (user_id, account_id, transaction_name, amount, transaction_date, category) VALUES (%s, %s, %s, %s, %s, %s) RETURNING id", (current_user_id, data['account_id'], data['description'], amount, data['date'], category)
+        )
 
         transaction_id = cur.fetchone()[0]
         conn.commit()
@@ -233,16 +244,15 @@ def upload_csv(current_user_id):
                 data = reader.read_statement(temp_path, encoding='latin-1')
             except ValueError as e:
                 if str(e) == "Date column must be in DD/MM/YYYY format or YYYY-MM-DD format":
-                    print("I WAS HERE")
                     return jsonify({'error': str(e)}), 400
 
             num_rows = len(data["Date"])
 
-            # Clean up: remove temp file
+            # Clean up and remove temp file
             try:
                 os.remove(temp_path)
             except:
-                pass  # Ignore cleanup errors            
+                pass
             
         except pd.errors.EmptyDataError:
             return jsonify({'error': 'The CSV file is empty'}), 400
@@ -256,20 +266,23 @@ def upload_csv(current_user_id):
         conn = get_db_connection()
         cur = conn.cursor()
 
-        # # Get account_id
-        # cur.execute("SELECT id FROM accounts WHERE user_id = %s AND account_name = %s", (1, data['account']))
-
-        # account = cur.fetchone()
-        # if not account:
-        #     return jsonify({'error': 'Account not found'}), 404
-
-        # account_id = account[0]
-
         for row_num in range(num_rows):
-            print(f'{data["Name"][row_num]} has an amount of {data["Amount"][row_num]} and a date of {data["Date"][row_num]}')
-            category = model.predict_single(nlp.transform_embeddings([data['Name'][row_num]])[0]).get("predicted_category")
-            cur.execute("INSERT INTO transactions (user_id, account_id, transaction_name, amount, transaction_date, category) VALUES (%s, %s, %s, %s, %s, %s) RETURNING id", (current_user_id, account_id, data['Name'][row_num], data['Amount'][row_num], data['Date'][row_num], category))
+            amount = float(data['Amount'][row_num])
+            description = data['Name'][row_num]
+            date = data['Date'][row_num]
 
+            # Check if amount is positive
+            if amount > 0:
+                category = "Income"
+            else:
+                # Predict category only for negative amounts
+                category = model.predict_single(
+                    nlp.transform_embeddings([description])[0]
+                ).get("predicted_category")
+
+            cur.execute(
+                "INSERT INTO transactions (user_id, account_id, transaction_name, amount, transaction_date, category) VALUES (%s, %s, %s, %s, %s, %s)", (current_user_id, account_id, description, amount, date, category)
+            )
         conn.commit()
 
         return jsonify({
@@ -532,7 +545,7 @@ def generate_forecast(current_user_id):
         rows = cur.fetchall()
         
         if not rows:
-            return jsonify({'error': f'No transactions found for this user'}), 404
+            return jsonify({'error': f'No transactions found for this user. You need at least a 30 day period of transactions.'}), 404
 
         # Prepare DataFrame for run_forecast()
         df = pd.DataFrame(rows, columns=['transaction_date', 'amount', 'category'])
@@ -576,7 +589,7 @@ def generate_forecast(current_user_id):
 
     except ValueError as e:
         if "Insufficient data" in str(e):
-            return jsonify({'error': 'Not enough transaction history to generate a forecast'}), 400
+            return jsonify({'error': 'Not enough transaction history to generate a forecast. You need at least a 30 day period of transactions.'}), 400
         return jsonify({'error': str(e)}), 500
     except Exception as e:
         conn.rollback()

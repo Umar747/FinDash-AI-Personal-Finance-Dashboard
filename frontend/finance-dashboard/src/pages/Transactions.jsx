@@ -77,6 +77,7 @@ const Transactions = () => {
     try {
       await transactionsAPI.delete(id);
       await fetchTransactions(); // refresh table
+      setTransactions(prev => prev.filter(t => t.id !== id));
     } catch (error) {
       console.error(error);
       alert('Failed to delete transaction');

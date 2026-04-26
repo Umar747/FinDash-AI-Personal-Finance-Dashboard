@@ -25,8 +25,8 @@ const Insights = () => {
       try {
         setLoading(true);
         const [historyRes, forecastRes] = await Promise.all([
-          transactionsAPI.getAll(),
-          analyticsAPI.getForecast()
+          analyticsAPI.getForecast(),
+          transactionsAPI.getAll()
         ]);
 
         const rawHistory = historyRes.data.transactions || [];

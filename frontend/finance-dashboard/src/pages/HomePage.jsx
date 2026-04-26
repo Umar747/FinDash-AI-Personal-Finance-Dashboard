@@ -27,9 +27,9 @@ const HomePage = () => {
 
       <div className="features">
         <div className="feature-card">
-          <div className="feature-icon">🤖</div>
+          <div className="feature-icon">🧮</div>
           <h3>AI Categorisation</h3>
-          <p>Machine learning automatically categorises your transactions using NLP.</p>
+          <p>Machine Learning automatically categorises your transactions using Natural Language Processing.</p>
         </div>
         
         <div className="feature-card">
@@ -39,20 +39,22 @@ const HomePage = () => {
         </div>
         
         <div className="feature-card">
-          <div className="feature-icon">🎯</div>
-          <h3>Smart Insights</h3>
-          <p>Get personalised recommendations to optimise your finances.</p>
+          <div className="feature-icon">🤖</div>
+          <h3>AI Financial Agent</h3>
+          <p>Chat with our local AI agent to understand your data and carry out actions automatically.</p>
         </div>
       </div>
 
       <div className="tech-stack">
         <h3>Technical Stack</h3>
         <div className="tech-icons">
-          <span className="tech-icon">⚛️ React</span>
-          <span className="tech-icon">🐍 Flask</span>
-          <span className="tech-icon">🧠 Scikit-Learn</span>
-          <span className="tech-icon">📊 PostgreSQL</span>
-          <span className="tech-icon">🤗 Transformers</span>
+          <span className="tech-icon">Python</span>
+          <span className="tech-icon">React</span>
+          <span className="tech-icon">Flask</span>
+          <span className="tech-icon">PostgreSQL</span>
+          <span className="tech-icon">Scikit-Learn</span>
+          <span className="tech-icon">Transformers</span>
+          <span className="tech-icon">LangChain</span>
         </div>
       </div>
 

@@ -63,7 +63,7 @@ const TransactionTable = ({
       }
       return 0;
     });
-    
+
     return sortableItems;
   }, [transactions, sortConfig]);
 
@@ -260,6 +260,11 @@ const TransactionTable = ({
                       onClick={async () => {
                         if (window.confirm('Are you sure you want to delete this transaction?')) {
                           onDelete(transaction.id);
+                          
+                          // Clear from selectedRows if it was checked
+                          const newSelected = new Set(selectedRows);
+                          newSelected.delete(transaction.id);
+                          setSelectedRows(newSelected);
                         }
                       }}
                       className="delete-btn"

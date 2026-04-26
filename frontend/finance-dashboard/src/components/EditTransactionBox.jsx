@@ -1,5 +1,5 @@
 // src/components/EditTransactionBox.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './TransactionForm.css'; // Reusing existing form styles
 
 const EditTransactionBox = ({ transaction, accounts, onClose, onSave }) => {
@@ -11,7 +11,21 @@ const EditTransactionBox = ({ transaction, accounts, onClose, onSave }) => {
     account_id: accounts.find(a => a.account === transaction.account)?.id || ""
   });
 
-  const categories = ["Income", "Transport", "Groceries", "Dining", "Shopping & Retail", "Entertainment", "Bills"];
+  const incomeCategories = ["Income"];
+  const expenseCategories = ["Travel", "Groceries", "Dining", "Shopping & Retail", "Entertainment", "Bills"];
+
+  // Determine which list to use based on the current amount
+  const isPositive = parseFloat(formData.amount) > 0;
+  const availableCategories = isPositive ? incomeCategories : expenseCategories;
+
+  // Ensure the selected category is always valid for the current amount
+  useEffect(() => {
+    if (isPositive && !incomeCategories.includes(formData.category)) {
+      setFormData(prev => ({ ...prev, category: incomeCategories[0] }));
+    } else if (!isPositive && !expenseCategories.includes(formData.category)) {
+      setFormData(prev => ({ ...prev, category: expenseCategories[0] }));
+    }
+  }, [formData.amount]); // Rerun whenever the amount changes  
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -54,7 +68,7 @@ const EditTransactionBox = ({ transaction, accounts, onClose, onSave }) => {
           <div className="form-group">
             <label>Category</label>
             <select value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} required>
-              {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+              {availableCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
             </select>
           </div>
           

@@ -58,7 +58,7 @@ def create_transactions(user_id, account_id):
 
             # 3. TRANSPORT: Daily commute
             if not is_weekend:
-                daily_transactions.append(("Commute", round(random.uniform(-10, -5), 2), "Transport"))
+                daily_transactions.append(("Commute", round(random.uniform(-10, -5), 2), "Travel"))
 
             # 4. GROCERIES: Weekly trip
             if current_date.weekday() == 6: # Sunday
