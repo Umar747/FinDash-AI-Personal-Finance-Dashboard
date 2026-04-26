@@ -19,9 +19,13 @@ def get_recent_transactions(input_str: str = "5", user_id: int = None):
     Retrieves the most recent transactions from the database. 
     Input format: num_transactions=limit (e.g., 'num_transactions=5')
     """
-    # Robust parsing using regex to find digits in the input string
+
+    conn = None
+    cur = None
+
+    # Parsing using regex to find digits in the input string
     try:
-        # Extracts only the digits from the input (e.g., 'limit_input=12' -> '12')
+        # Extracts only the digits from the input
         numbers = re.findall(r'\d+', str(input_str))
         limit = int(numbers[0]) if numbers else 5
     except Exception:
@@ -54,8 +58,10 @@ def get_recent_transactions(input_str: str = "5", user_id: int = None):
     except Exception as e:
         return f"Observation: Error retrieving transactions - {str(e)}"
     finally:
-        cur.close()
-        conn.close()
+        if cur is not None:
+            cur.close()
+        if conn is not None:
+            conn.close()
 
 
 
@@ -63,26 +69,40 @@ def get_recent_transactions(input_str: str = "5", user_id: int = None):
 def create_new_transaction(input_str: str, user_id: int = None):
     """
     Creates a new transaction. 
-    Input format: description="name", amount=value, account_id=id, date="YYYY-MM-DD" (e.g., 'description="Coffee", amount=1.50, account_id=1, date="2026-01-01"')
+    All parameters (description, amount, account_id, date) MUST be present.
+    Input format: description="name", date="YYYY-MM-DD", amount=value, account_id=id (e.g., 'description="Coffee", date="2026-01-01", amount=1.50, account_id=1')
     """
-    print(f"THE INPUT STRING IS {input_str}")
+
+    conn = None
+    cur = None
+
     try:
-        # Extracts value between quotes for description and date
-        desc_match = re.search(r'description=["\'](.*?)["\']', input_str)
-        date_match = re.search(r'date=["\'](.*?)["\']', input_str)
+        print("Input string is " + input_str)
+        # Extracts value for description and date
+
+        desc_match = re.search(r'description=(?:["\'](.*?)["\']|(\S+))', input_str)
+        date_match = re.search(r'date=(?:["\'](.*?)["\']|(\S+))', input_str)
         
         # Extracts numeric values for amount and account_id
         amount_match = re.search(r'amount=(-?\d+(?:\.\d+)?)', input_str)
         account_match = re.search(r'account_id=(\d+)', input_str)
 
-        # Assign values with fallbacks
-        description = desc_match.group(1) if desc_match else None
-        amount = float(amount_match.group(1)) if amount_match else None
-        account_id = int(account_match.group(1)) if account_match else 1
-        date = date_match.group(1) if date_match else datetime.now().strftime('%Y-%m-%d')
+        print("Date match is " + str(date_match))
 
-        if not description or amount is None:
-            return "Observation: Error - Missing description or amount in the input string."
+        # Check if all matches exist
+        if not all([desc_match, date_match, amount_match, account_match]):
+            missing = []
+            if not desc_match: missing.append("description")
+            if not amount_match: missing.append("amount")
+            if not account_match: missing.append("account_id")
+            if not date_match: missing.append("date")
+            return f"Observation: Error - Missing required fields: {', '.join(missing)}."
+
+        # Assign values
+        description = desc_match.group(1)
+        amount = float(amount_match.group(1))
+        account_id = int(account_match.group(1))
+        date = date_match.group(1)
 
         conn = get_db_connection()
         cur = conn.cursor()
@@ -109,8 +129,70 @@ def create_new_transaction(input_str: str, user_id: int = None):
     except Exception as e:
         return f"Observation: Failed to parse or insert transaction. Error: {str(e)}"
     finally:
-        cur.close()
-        conn.close()
+        if cur is not None:
+            cur.close()
+        if conn is not None:
+            conn.close()
+
+
+
+@tool
+def update_transaction_category(input_str: str, user_id: int = None):
+    """
+    Updates the category of an existing transaction given its ID.
+    Input format: category="New Category", transaction_id=ID (e.g., "category="Groceries", transaction_id=12")
+    """
+
+    conn = None
+    cur = None
+
+    try:
+        # Extract ID and Category using regex
+        id_match = re.search(r'transaction_id=(\d+)', input_str)
+        cat_match = re.search(r'category=["\'](.*?)["\']', input_str)
+
+        if not id_match or not cat_match:
+            return "Observation: Error - Please provide both transaction_id and category."
+
+        transaction_id = int(id_match.group(1))
+        new_category = cat_match.group(1).strip()
+
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        # Fetch the transaction to check if it exists, who owns it, and the amount
+        cur.execute(
+            "SELECT amount FROM transactions WHERE id = %s AND user_id = %s", 
+            (transaction_id, user_id)
+        )
+        row = cur.fetchone()
+
+        if not row:
+            return f"Observation: Error - Transaction ID {transaction_id} not found or access denied."
+
+        amount = float(row[0])
+        valid_expense_categories = ["Travel", "Groceries", "Dining", "Shopping & Retail", "Entertainment", "Bills"]
+
+        # Validation Logic
+        if amount > 0:
+            if new_category != "Income":
+                return f"Observation: Error - Positive transactions (Income) can only be categorised as 'Income'. Received: {new_category}."
+        else:
+            if new_category not in valid_expense_categories:
+                return f"Observation: Error - Negative transactions must be one of: {', '.join(valid_expense_categories)}. Received: {new_category}."
+
+        cur.execute("UPDATE transactions SET category = %s WHERE id = %s", (new_category, transaction_id))
+        conn.commit()
+
+        return f"Observation: Success! Transaction {transaction_id} category updated to {new_category}."
+
+    except Exception as e:
+        return f"Observation: Error updating category - {str(e)}"
+    finally:
+        if cur is not None:
+            cur.close()
+        if conn is not None:
+            conn.close()
 
 
 
@@ -120,6 +202,10 @@ def delete_transaction(input_str: str, user_id: int = None):
     Deletes a transaction from the database given its ID.
     Input format: transaction_id=ID (e.g., 'transaction_id=42')
     """
+
+    conn = None
+    cur = None
+
     try:
         # Extract the ID using regex
         match = re.search(r'transaction_id=(\d+)', input_str)
@@ -146,8 +232,10 @@ def delete_transaction(input_str: str, user_id: int = None):
     except Exception as e:
         return f"Observation: Error deleting transaction - {str(e)}"
     finally:
-        cur.close()
-        conn.close()
+        if cur is not None:
+            cur.close()
+        if conn is not None:
+            conn.close()
 
 
 
@@ -156,10 +244,14 @@ def search_transactions(input_str: str, user_id: int = None):
     """
     Searches transactions based on user criteria. 
     All parameters are optional.
-    Input format: category='Groceries', start_date='2024-01-01', end_date='2024-01-31', min_amount=10, max_amount=100, name='Tesco'
+    Input format: category="Search Category", start_date="YYYY-MM-DD", end_date="YYYY-MM-DD", name="Search Name", min_amount=minimum_search_amount, max_amount=maximum_search_amount (e.g., "category="Groceries", start_date="2024-01-01", end_date="2024-01-31", name="Tesco", min_amount=10, max_amount=100")
     """
+
+    conn = None
+    cur = None
+
     try:
-        # 1xtraction using Regex (all optional)
+        # Extraction using Regex (all optional)
         cat_match = re.search(r"category=['\"](.*?)['\"]", input_str)
         name_match = re.search(r"name=['\"](.*?)['\"]", input_str)
         start_match = re.search(r"start_date=['\"](\d{4}-\d{2}-\d{2})['\"]", input_str)
@@ -167,7 +259,7 @@ def search_transactions(input_str: str, user_id: int = None):
         min_match = re.search(r"min_amount=(-?\d+(?:\.\d+)?)", input_str)
         max_match = re.search(r"max_amount=(-?\d+(?:\.\d+)?)", input_str)
 
-        # Build Dynamic SQL query
+        # Build dynamic SQL query
         query_parts = ["SELECT transaction_date, transaction_name, amount, category FROM transactions WHERE user_id = %s"]
         params = [user_id]
 
@@ -213,8 +305,10 @@ def search_transactions(input_str: str, user_id: int = None):
     except Exception as e:
         return f"Observation: Error during filtered search: {str(e)}"
     finally:
-        cur.close()
-        conn.close()
+        if cur is not None:
+            cur.close()
+        if conn is not None:
+            conn.close()
 
 # Export list of tools
-tools = [get_recent_transactions, create_new_transaction, delete_transaction, search_transactions]
+tools = [get_recent_transactions, create_new_transaction, update_transaction_category, delete_transaction, search_transactions]
