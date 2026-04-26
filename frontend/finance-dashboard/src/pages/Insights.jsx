@@ -24,7 +24,7 @@ const Insights = () => {
     const loadData = async () => {
       try {
         setLoading(true);
-        const [historyRes, forecastRes] = await Promise.all([
+        const [forecastRes, historyRes] = await Promise.all([
           analyticsAPI.getForecast(),
           transactionsAPI.getAll()
         ]);

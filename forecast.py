@@ -86,14 +86,6 @@ class FinancialForecaster:
                     current_last_income = current_date
                 
                 features = self._get_features(pd.DataFrame({'ds': [current_date]}), current_last_income)
-
-                # if cat in self.spiky_categories and clf_hurdle:
-                #     # Only predict if probability > 50%
-                #     prob = clf_hurdle.predict_proba(features)[0][1]
-                #     if prob > 0.5 and reg_hurdle:
-                #         pred = reg_hurdle.predict(features)[0]
-                #     else:
-                #         pred = 0.0
                 
                 if cat in self.spiky_categories and clf_hurdle:
                     # Check if the classifier actually knows about both zero and non-zero classes
