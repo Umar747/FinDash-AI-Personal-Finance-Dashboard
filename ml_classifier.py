@@ -10,8 +10,9 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import LabelEncoder
 
-import joblib  # For saving/loading trained models
+import joblib  # For saving and loading trained models
 import os
+import time
 
 from main import NLPDataProcessor
 from reader import CSVReader
@@ -23,7 +24,7 @@ class FinancialTransactionClassifier:
     This class handles the entire ML pipeline of training, evaluation, prediction, and model persistence. It supports multiple classifier types and provides comprehensive evaluation metrics.
     """
     
-    def __init__(self, model_type: str = 'svm', random_state: int = 42):
+    def __init__(self, model_type: str = 'random_forest', random_state: int = 42):
         """
         Initialise the financial transaction classifier.
         
@@ -142,25 +143,31 @@ class FinancialTransactionClassifier:
              cross_validate: bool = True) -> Dict[str, Any]:
         """
         This is the main training method that carries out data preparation, model initialisation, training, and evaluation.
-        
+
         Args:
-            features (np.ndarray): Feature matrix from NLP processing
-            labels (List[str]): Category labels for each feature
-            feature_type (str): Type of features ('tfidf' or 'embeddings')
-            test_size (float): Proportion of data to reserve for testing
+            features (np.ndarray): Feature matrix from NLP processing (TF-IDF vectors or Transformer embeddings)
+            labels (List[str]): Corresponding category labels for each transaction
+            feature_type (str): Type of features used ('tfidf' or 'embeddings')
+            test_size (float): Proportion of data to reserve for the test set (default 0.2)
             cross_validate (bool): Whether to perform cross-validation for more robust evaluation
             
         Returns:
-            Dict[str, Any]: Comprehensive training results including:
-                - test_accuracy: Accuracy on the test set
-                - classification_report: Detailed per-class metrics
-                - confusion_matrix: Matrix of prediction vs actual counts
-                - cross_val_scores: Scores from cross-validation
-                - classes: List of class names
-                - feature_type: Type of features used
-                - model_type: Type of model used
+            Dict[str, Any]: A results dictionary including:
+                - accuracy (float): Global accuracy on the test set
+                - balanced_accuracy (float): Accuracy adjusted for class imbalance
+                - macro_f1 (float): F1-score treating all classes equally (key for rare categories)
+                - latency_ms_per_sample (float): Avg time taken to classify a single transaction
+                - avg_confidence (float): The mean probability score for all predictions
+                - confidence_correct (float): Mean confidence when the model is right
+                - confidence_incorrect (float): Mean confidence when the model is wrong
+                - classification_report (dict): Per-class precision, recall, and F1-score
+                - confusion_matrix (list): Raw matrix of actual vs. predicted counts
+                - cross_val_scores (list): Individual fold scores if cross_validate is True
+                - classes (list): The list of category names (label mapping)
+                - feature_type (str): The extraction method used (tfidf/embeddings)
+                - model_type (str): The classifier used (random_forest/svm/etc)
         """
-        self.logger.info(f"Starting training with {self.model_type} classifier...")
+        self.logger.info(f"Starting training with {self.model_type} classifier using {feature_type}...")
         
         # Prepare the data (encode labels, split into train/test)
         X_train, X_test, y_train, y_test, y_encoded = self._prepare_training_data(
@@ -176,7 +183,7 @@ class FinancialTransactionClassifier:
         self.is_trained = True  # Mark model as trained
         
         # Evaluate model performance on the test set (unseen data)
-        test_accuracy, classification_rep, conf_matrix = self.evaluate(X_test, y_test)
+        eval_results = self.evaluate(X_test, y_test)
         
         # Optional cross-validation for more robust evaluation
         # Cross-validation trains on different subsets of data to get a better performance estimate
@@ -193,56 +200,88 @@ class FinancialTransactionClassifier:
             )
         
         # Compile all results into a comprehensive dictionary
-        results = {
-            'test_accuracy': test_accuracy,  # Accuracy on the test set
-            'classification_report': classification_rep,  # Precision, recall, F1 per class
-            'confusion_matrix': conf_matrix,  # Matrix of actual vs predicted counts
-            'cross_val_scores': cv_scores,  # List of accuracy scores from CV
-            # 'cross_val_mean_accuracy': np.mean(cv_scores) if cv_scores is not None else None,  # Average CV accuracy
-            # 'cross_val_std_accuracy': np.std(cv_scores) if cv_scores is not None else None,  # Standard deviation of CV accuracy
-            'classes': self.label_encoder.classes_.tolist(),  # List of class names
-            'feature_type': feature_type,  # Type of features used
-            'model_type': self.model_type  # Type of model used
-        }
+        results = eval_results.copy()
+        results.update({
+            'cross_val_scores': cv_scores.tolist() if cv_scores is not None else None,
+            'cross_val_mean': np.mean(cv_scores) if cv_scores is not None else None,
+            'classes': self.label_encoder.classes_.tolist(),
+            'feature_type': feature_type,
+            'model_type': self.model_type
+        })
         
-        self.logger.info(f"Training completed. Test accuracy: {test_accuracy:.3f}")
+        self.logger.info(f"Training completed. Accuracy: {results['accuracy']:.3f}, Macro F1: {results['macro_f1']:.3f}")
         if cv_scores is not None:
             self.logger.info(f"Cross-validation accuracy: {np.mean(cv_scores):.3f} ± {np.std(cv_scores):.3f}")
         
         return results
-    
-    def evaluate(self, X_test: np.ndarray, y_test: np.ndarray) -> tuple:
+
+    def evaluate(self, X_test: np.ndarray, y_test: np.ndarray) -> Dict[str, Any]:
         """
-        This method calculates various performance metrics to understand how well the model generalises on unseen data.
-        
+        Evaluation to compare TF-IDF vs Transformer models.
+
         Args:
-            X_test (np.ndarray): Test features (from the test set)
-            y_test (np.ndarray): True test labels (encoded as numbers)
-            
+            X_test (np.ndarray): Feature matrix for the test set.
+            y_test (np.ndarray): Ground truth labels (encoded numerically).
+
         Returns:
-            tuple: (accuracy, classification_report, confusion_matrix)
+            Dict[str, Any]: A dictionary containing evaluation results:
+                - accuracy (float): Overall proportion of correct predictions.
+                - balanced_accuracy (float): Mean of recall on each class.
+                - macro_f1 (float): Unweighted mean of F1 scores.
+                - latency_ms_per_sample (float): Inference speed in milliseconds.
+                - avg_confidence (float): Mean probability score of all predictions.
+                - confidence_correct (float): Average confidence when predictions are accurate (measures model decisiveness).
+                - confidence_incorrect (float): Average confidence when predictions are wrong (measures model overconfidence).
+                - confusion_matrix (list): 2D array of actual vs. predicted labels for error analysis.
+                - classification_report (dict): Per-class precision, recall, and F1 metrics.
         """
         if not self.is_trained:
             raise ValueError("Model must be trained before evaluation")
         
-        # Make predictions on the test data
+        # Measure latency
+        start_time = time.time()
         y_pred = self.model.predict(X_test)
+        y_probs = self.model.predict_proba(X_test)
+        end_time = time.time()
         
-        # Overall accuracy (percentage of correct predictions)
+        total_time = end_time - start_time
+        latency_per_sample = total_time / len(X_test)
+
+        # Basic accuracy and F1
+        from sklearn.metrics import f1_score, balanced_accuracy_score
         accuracy = accuracy_score(y_test, y_pred)
+        balanced_acc = balanced_accuracy_score(y_test, y_pred)
+        macro_f1 = f1_score(y_test, y_pred, average='macro')
+
+        # Confidence analysis
+        # Get the probability of the chosen class for each prediction
+        confidences = np.max(y_probs, axis=1)
+        avg_confidence = np.mean(confidences)
         
-        # Detailed classification report with per class metrics
+        # Separate confidence for correct vs incorrect (Is the model overconfident?)
+        correct_mask = (y_pred == y_test)
+        conf_correct = np.mean(confidences[correct_mask]) if any(correct_mask) else 0
+        conf_incorrect = np.mean(confidences[~correct_mask]) if any(~correct_mask) else 0
+
+        # Standard classification report and confusion matrix
         classification_rep = classification_report(
-            y_test, 
-            y_pred, 
-            target_names=self.label_encoder.classes_,  # Use original class names
-            output_dict=True  # Return as dictionary for easier processing
+            y_test, y_pred, 
+            target_names=self.label_encoder.classes_, 
+            output_dict=True
         )
-        
-        # 3. Confusion matrix (shows what types of mistakes the model makes)
         conf_matrix = confusion_matrix(y_test, y_pred)
-        
-        return accuracy, classification_rep, conf_matrix
+
+        return {
+            'accuracy': accuracy,
+            'balanced_accuracy': balanced_acc,
+            'macro_f1': macro_f1,
+            'latency_ms_per_sample': latency_per_sample * 1000,
+            'avg_confidence': avg_confidence,
+            'confidence_correct': conf_correct,
+            'confidence_incorrect': conf_incorrect,
+            'confusion_matrix': conf_matrix.tolist(),
+            'classification_report': classification_rep
+        }
     
     def predict(self, features: np.ndarray) -> List[Dict[str, Any]]:
         """
@@ -391,22 +430,26 @@ class FinancialTransactionClassifier:
 
 # Save a Model
 
-# model = FinancialTransactionClassifier(model_type='logistic_regression')
+# model = FinancialTransactionClassifier(model_type='random_forest')
 # nlp = NLPDataProcessor()
 # reader = CSVReader()
 # transactions, categories = reader.read_dataset("data/dataset.csv")
 # features = nlp.transform_embeddings(transactions)
 # model.train(features, categories)
-# model.save_model("/Users/umarali/Library/CloudStorage/OneDrive-UniversityCollegeLondon/Third Year/Final Year Project/Personal-Finance-Dashboard/transaction_classifier")
+# model.save_model("/Users/umarali/Library/CloudStorage/OneDrive-UniversityCollegeLondon/Third Year/Final Year Project/Personal-Finance-Dashboard/transformer_transaction_classifier")
 
 # Train a Model
 
-# model = FinancialTransactionClassifier()
+# model = FinancialTransactionClassifier(random_state=109)
 # nlp = NLPDataProcessor()
 # reader = CSVReader()
 # transactions, categories = reader.read_dataset("data/dataset.csv")
-# features = nlp.transform_embeddings(transactions)
-# model.train(features, categories)
+# features = nlp.transform_tfidf(transactions)
+# results = model.train(features, categories)
+# print(f"Model: {results['model_type']} with {results['feature_type']}")
+# print(f"Accuracy: {results['accuracy']:.4f}")
+# print(f"Latency: {results['latency_ms_per_sample']:.4f} ms/sample")
+# print(f"Confidence Gap: {results['confidence_correct'] - results['confidence_incorrect']:.4f}")
 
 # print(model.predict_single(nlp.transform_embeddings(["Costa Coffee Credit"])[0]))
 # print(model.predict_single(nlp.transform_embeddings(["Cineworld Superman Viewing"])[0]))

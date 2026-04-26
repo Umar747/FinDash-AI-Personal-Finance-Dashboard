@@ -5,7 +5,8 @@
 /templates
 .coverage
 saved_commands.sql
-transaction_classifier.joblib
+transformer_transaction_classifier.joblib
+tfidf_transaction_classifier.joblib
 svm_transaction_classifier.joblib
 commands.md
 test.py

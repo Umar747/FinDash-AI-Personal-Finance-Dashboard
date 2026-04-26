@@ -70,7 +70,7 @@ const Auth = () => {
             />
             {!isLogin && (
               <small className="password-hint">
-                Min 5 chars, 1 uppercase, 1 number, 1 special char.
+                Min 5 characters, 1 uppercase, 1 number, 1 special character.
               </small>
             )}
           </div>

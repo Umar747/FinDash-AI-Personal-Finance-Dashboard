@@ -1,3 +1,4 @@
+import pandas as pd
 import re
 import logging
 from typing import List
@@ -35,6 +36,17 @@ class NLPDataProcessor:
         logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
         self.logger = logging.getLogger(__name__)
 
+        # Load the CSV file and extract only the transaction column
+        try:
+            self.logger.info("Loading transaction dataset from dataset.csv...")
+            df = pd.read_csv('data/dataset.csv')
+            # Extract the transaction column as a list of strings
+            self.transaction_set = df['transaction'].astype(str).tolist()
+            self.logger.info(f"Loaded {len(self.transaction_set)} transactions from file.")
+        except Exception as e:
+            self.logger.error(f"Failed to load dataset.csv: {e}")
+            self.transaction_set = []
+
         # Combine English stopwords and finance-related stopwords into one set
         self.stop_words = set(stopwords.words('english'))
         self.finance_stop_words = {'pos', 'debit', 'credit', 'chq', 'chrg', 'ref', 'pmt', 'sq', '*', 'card', 'payment', 'direct', 'fund', 'transfer', 'online', 'purchase'}
@@ -57,144 +69,6 @@ class NLPDataProcessor:
             # Try to load the model again
             self.nlp = spacy.load("en_core_web_sm", disable=['parser', 'ner'])
             self.logger.info("spaCy model 'en_core_web_sm' loaded successfully.")
-        
-        self.transaction_set = [
-            # Transport Category
-            "TFL TRAVEL CHRG",
-            "UBER TRIP LONDON",
-            "UBER EATS DELIVERY",
-            "LONDON BUS FARE",
-            "TUBE JOURNEY FARE",
-            "TAXI CHARGE CENTRAL",
-            "NATIONAL RAIL TICKET",
-            "GATWICK EXPRESS FARE",
-            "CITY AIRPORT TRANSFER",
-            "PARKING CHARGE NCP",
-            "PETROL STATION SHELL",
-            "BP PETROL STATION",
-            "TESCO PETROL STATION",
-            "SHELL SERVICE STATION",
-            "TFL CONTACTLESS FARE",
-
-            # Groceries Category
-            "TESCO SUPERSTORE",
-            "SAINSBURYS LOCAL",
-            "WAITROSE SUPERMARKET",
-            "MORRISONS GROCERIES",
-            "ASDA SUPERSTORE LTD",
-            "LIDL SUPERMARKET UK",
-            "ALDI FOOD STORE",
-            "CO-OP FOOD STORE",
-            "MARKS SPENCER FOOD",
-            "WHOLE FOODS MARKET",
-            "ICELAND SUPERMARKET",
-            "OCCADO DELIVERY",
-            "TESCO EXPRESS STORE",
-            "SAINSBURYS SUPERMARKET",
-            "M&S SIMPLY FOOD",
-
-            # Dining & Coffee Category
-            "STARBUCKS COFFEE",
-            "PRET A MANGER",
-            "COSTA COFFEE SHOP",
-            "CAFE NERO LONDON",
-            "MCDONALDS RESTAURANT",
-            "BURGER KING MEAL",
-            "KFC FRIED CHICKEN",
-            "SUBWAY SANDWICHES",
-            "DOMINOS PIZZA DELIV",
-            "PIZZA EXPRESS MEAL",
-            "NANDOS RESTAURANT",
-            "WAGAMAMA NOODLES",
-            "GREGGS BAKERY SHOP",
-            "ITSUSUSHI LUNCH",
-            "LEON RESTAURANT",
-
-            # Shopping & Retail Category
-            "AMAZON MARKETPLACE",
-            "AMAZON PRIME VIDEO",
-            "EBAY ONLINE SHOPPING",
-            "ASOS FASHION ONLINE",
-            "NEXT RETAIL STORE",
-            "JOHN LEWIS PARTNERS",
-            "ARGOS CATALOGUE STORE",
-            "PRIMARK CLOTHING STORE",
-            "BOOTS CHEMIST STORE",
-            "SUPERDRUG PHARMACY",
-            "IKEA FURNITURE STORE",
-            "CURRYS PC WORLD",
-            "APPLE STORE ONLINE",
-            "H&M CLOTHING STORE",
-            "ZARA FASHION RETAIL",
-
-            # Entertainment & Subscription Category
-            "NETFLIX SUBSCRIPTION",
-            "SPOTIFY PREMIUM SUB",
-            "AMAZON PRIME SUB",
-            "DISNEY PLUS SUB",
-            "APPLE MUSIC SUB",
-            "YOUTUBE PREMIUM SUB",
-            "PLAYSTATION NETWORK",
-            "XBOX LIVE SUBSCRIPTION",
-            "CINEMA TICKET ODEON",
-            "VUE CINEMA TICKETS",
-            "THEATRE ROYAL TICKET",
-            "LONDON MUSEUM ENTRY",
-            "GYM MEMBERSHIP PAY",
-            "SWIMMING POOL ENTRY",
-            "GOLF CLUB MEMBERSHIP",
-
-            # Utilities & Bills Category
-            "THAMES WATER BILL",
-            "BRITISH GAS BILL",
-            "EDF ENERGY BILL",
-            "EE MOBILE BILL",
-            "VODAFONE BILL PAY",
-            "O2 MOBILE PAYMENT",
-            "THREE MOBILE BILL",
-            "SKY TV SUBSCRIPTION",
-            "VIRGIN MEDIA BILL",
-            "BT BROADBAND BILL",
-            "COUNCIL TAX PAYMENT",
-            "TV LICENCE PAYMENT",
-            "HOME INSURANCE PAY",
-            "CAR INSURANCE PREM",
-            "CAR TAX PAYMENT DVLA",
-
-            # Travel & Accommodation Category
-            "BRITISH AIRWAYS FLIGHT",
-            "EASYJET FLIGHT TICKET",
-            "RYANAIR FLIGHT BOOKING",
-            "HOTEL BOOKING PREMIER",
-            "HOLIDAY INN HOTEL",
-            "TRAVELODGE ACCOMMODATION",
-            "AIRBNB BOOKING FEE",
-            "BOOKING COM RESERVATION",
-            "EXPEDIA TRAVEL BOOKING",
-            "EUROSTAR TICKET BOOKING",
-            "HERTZ CAR RENTAL",
-            "EUPCAR RENTAL SERVICE",
-            "HOSTELWORLD BOOKING",
-            "TRAVELSUPERMARKET DEAL",
-            "LASTMINUTE COM BOOKING",
-
-            # Financial Services Category
-            "BARCLAYS BANK CHARGES",
-            "HSBC BANK FEE",
-            "LLOYDS BANK CHARGES",
-            "NATWEST BANK FEE",
-            "SANTANDER BANK CHARGE",
-            "CASH WITHDRAWAL ATM",
-            "BANK TRANSFER FEE",
-            "PAYPAL PAYMENT SENT",
-            "WISE TRANSFER FEE",
-            "REVOLUT CARD PAYMENT",
-            "MONZO BANK PAYMENT",
-            "STARLING BANK PAYMENT",
-            "CURRENCY EXCHANGE FEE",
-            "WESTERN UNION TRANSFER",
-            "MONEYGRAM TRANSFER FEE"
-        ]
 
         # Initialise placeholders for the models that will be trained or loaded later
         self.tfidf_vectorizer = None
