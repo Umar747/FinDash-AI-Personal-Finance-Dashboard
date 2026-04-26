@@ -87,13 +87,26 @@ class FinancialForecaster:
                 
                 features = self._get_features(pd.DataFrame({'ds': [current_date]}), current_last_income)
 
+                # if cat in self.spiky_categories and clf_hurdle:
+                #     # Only predict if probability > 50%
+                #     prob = clf_hurdle.predict_proba(features)[0][1]
+                #     if prob > 0.5 and reg_hurdle:
+                #         pred = reg_hurdle.predict(features)[0]
+                #     else:
+                #         pred = 0.0
+                
                 if cat in self.spiky_categories and clf_hurdle:
-                    # Only predict if probability > 50%
-                    prob = clf_hurdle.predict_proba(features)[0][1]
+                    # Check if the classifier actually knows about both zero and non-zero classes
+                    if len(clf_hurdle.classes_) == 2:
+                        prob = clf_hurdle.predict_proba(features)[0][1]
+                    else:
+                        prob = 1.0 if clf_hurdle.classes_[0] == 1 else 0.0
+                    
                     if prob > 0.5 and reg_hurdle:
                         pred = reg_hurdle.predict(features)[0]
                     else:
                         pred = 0.0
+
                 else:
                     # Use standard model for stable trends
                     pred = model_std.predict(features)[0]

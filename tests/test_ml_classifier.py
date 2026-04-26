@@ -1,8 +1,8 @@
 import pytest
 import numpy as np
-
 import sys
 import os
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from ml_classifier import FinancialTransactionClassifier
 
@@ -68,23 +68,31 @@ def test_training_different_models(sample_training_data):
 # Model Training - Does it return proper evaluation metrics?
 def test_training_metrics(sample_training_data):
     features, labels = sample_training_data
-    classifier = FinancialTransactionClassifier()
-    results = classifier.train(features, labels)
+    classifier = FinancialTransactionClassifier(model_type='random_forest')
+    results = classifier.train(features, labels, cross_validate=True)
     
     # Check that all expected metrics are present
-    assert 'test_accuracy' in results
-    assert 'classification_report' in results
-    assert 'confusion_matrix' in results
-    assert 'cross_val_scores' in results
-    assert 'classes' in results
-    assert 'feature_type' in results
-    assert 'model_type' in results
+    expected_keys = ['accuracy', 'balanced_accuracy', 'macro_f1', 'latency_ms_per_sample', 'avg_confidence', 'confidence_correct', 'confidence_incorrect', 'classification_report', 'confusion_matrix', 'cross_val_scores', 'cross_val_mean', 'classes', 'feature_type', 'model_type']
+    for key in expected_keys:
+        assert key in results, f"Metric '{key}' missing from training results"
     
-    # Check metric types and ranges
-    assert 0 <= results['test_accuracy'] <= 1
+    # Check metric types and logic
+    assert 0 <= results['accuracy'] <= 1
     assert isinstance(results['classification_report'], dict)
-    assert isinstance(results['confusion_matrix'], np.ndarray)
-    assert len(results['cross_val_scores']) == 5  # 5-fold cross-validation
+    
+    assert isinstance(results['confusion_matrix'], list)
+    
+    # Check cross-validation logic
+    assert len(results['cross_val_scores']) == 5
+    assert isinstance(results['cross_val_mean'], float)
+
+    # Check confidence logic
+    assert 'avg_confidence' in results
+    assert 0 <= results['avg_confidence'] <= 1
+    
+    # Check metadata
+    assert results['model_type'] == 'random_forest'
+    assert len(results['classes']) == 3  # Based on sample data
 
 # Data Preparation - Does _prepare_training_data work correctly?
 def test_prepare_training_data(classifier, sample_training_data):
@@ -202,7 +210,7 @@ def test_get_model_info(classifier, sample_training_data):
     # Test before training
     info_before = classifier.get_model_info()
     assert not info_before['is_trained']
-    assert info_before['model_type'] == 'svm'
+    assert info_before['model_type'] == 'random_forest'
     assert info_before['num_classes'] == 0
     assert info_before['classes'] == []
     
@@ -211,7 +219,7 @@ def test_get_model_info(classifier, sample_training_data):
     info_after = classifier.get_model_info()
     
     assert info_after['is_trained']
-    assert info_after['model_type'] == 'svm'
+    assert info_after['model_type'] == 'random_forest'
     assert info_after['num_classes'] == 3
     assert set(info_after['classes']) == {'Transport', 'Groceries', 'Entertainment'}
 

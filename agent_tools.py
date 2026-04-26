@@ -77,7 +77,6 @@ def create_new_transaction(input_str: str, user_id: int = None):
     cur = None
 
     try:
-        print("Input string is " + input_str)
         # Extracts value for description and date
 
         desc_match = re.search(r'description=(?:["\'](.*?)["\']|(\S+))', input_str)
@@ -86,8 +85,6 @@ def create_new_transaction(input_str: str, user_id: int = None):
         # Extracts numeric values for amount and account_id
         amount_match = re.search(r'amount=(-?\d+(?:\.\d+)?)', input_str)
         account_match = re.search(r'account_id=(\d+)', input_str)
-
-        print("Date match is " + str(date_match))
 
         # Check if all matches exist
         if not all([desc_match, date_match, amount_match, account_match]):
