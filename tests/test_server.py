@@ -5,8 +5,8 @@ import os
 import jwt
 from datetime import datetime, timedelta
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from server import app
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../backend')))
+from backend.server import app
 
 TEST_SECRET = "a_very_long_and_secure_secret_key_for_testing_32_chars"
 
@@ -29,7 +29,7 @@ def auth_header():
 
 # Password Validation Tests - Does the password security logic work?
 def test_password_check():
-    from server import password_check
+    from backend.server import password_check
     
     # Failures
     assert password_check("short")[0] is False # Too short
@@ -42,13 +42,13 @@ def test_password_check():
 
 # File Validation Tests - Are only CSV files accepted?
 def test_allowed_file():
-    from server import allowed_file
+    from backend.server import allowed_file
     assert allowed_file("data.csv") is True
     assert allowed_file("image.png") is False
     assert allowed_file("script.py") is False
 
 # Auth Routes - Does the Signup and Login work?
-@patch('server.get_db_connection')
+@patch('backend.server.get_db_connection')
 def test_signup_success(mock_db, client):
     mock_conn = MagicMock()
     mock_cur = mock_conn.cursor.return_value
@@ -64,7 +64,7 @@ def test_signup_success(mock_db, client):
     assert response.get_json()['message'] == 'User created successfully'
 
 # Protected Routes - Does transaction retrieval work?
-@patch('server.get_db_connection')
+@patch('backend.server.get_db_connection')
 def test_get_all_transactions(mock_db, client, auth_header):
     mock_conn = MagicMock()
     mock_cur = mock_conn.cursor.return_value
@@ -89,9 +89,9 @@ def test_unauthorized_access(client):
     assert response.get_json()['message'] == 'Token is missing!'
 
 # Transaction Creation - Are positive transactions categorised properly?
-@patch('server.get_db_connection')
-@patch('server.model.predict_single')
-@patch('server.nlp.transform_embeddings')
+@patch('backend.server.get_db_connection')
+@patch('backend.server.model.predict_single')
+@patch('backend.server.nlp.transform_embeddings')
 def test_create_transaction_logic(mock_nlp, mock_model, mock_db, client, auth_header):
     mock_conn = MagicMock()
     mock_cur = mock_conn.cursor.return_value
@@ -111,7 +111,7 @@ def test_create_transaction_logic(mock_nlp, mock_model, mock_db, client, auth_he
     assert not mock_model.called
 
 # AI Agent Chat Route - Is the AI agent working properly?
-@patch('server.ask_finance_agent')
+@patch('backend.server.ask_finance_agent')
 def test_chat_with_agent(mock_agent, client, auth_header):
     mock_agent.return_value = "I have added your transaction."
     

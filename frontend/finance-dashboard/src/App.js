@@ -33,7 +33,7 @@ function App() {
     </Routes>
     <footer className="footer">
         <p>Final Year Project - UCL Computer Science | AI-Powered Personal Finance Dashboard</p>
-        <p className="footer-note">Created by Umar Ali</p>
+        <p className="footer-note">Created by TBKN6</p>
     </footer>
     </div>
   );

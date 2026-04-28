@@ -5,7 +5,7 @@ import sys
 import os
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from forecast import FinancialForecaster
+from backend.forecast import FinancialForecaster
 
 # Initialise forecaster with a default 90-day window
 @pytest.fixture

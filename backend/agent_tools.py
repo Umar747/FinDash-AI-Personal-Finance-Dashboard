@@ -6,18 +6,18 @@ from datetime import datetime
 from database import get_db_connection
 
 from ml_classifier import FinancialTransactionClassifier
-from main import NLPDataProcessor
+from nlp import NLPDataProcessor
 
 # Initialise components
 model = FinancialTransactionClassifier()
 nlp = NLPDataProcessor()
-model.load_model("/Users/umarali/Library/CloudStorage/OneDrive-UniversityCollegeLondon/Third Year/Final Year Project/Personal-Finance-Dashboard/transformer_transaction_classifier.joblib")
+model.load_model("/Users/umarali/Library/CloudStorage/OneDrive-UniversityCollegeLondon/Third Year/Final Year Project/Personal-Finance-Dashboard/backend/transformer_transaction_classifier.joblib")
 
 @tool
 def get_recent_transactions(input_str: str = "5", user_id: int = None):
     """
     Retrieves the most recent transactions from the database. 
-    Input format: num_transactions=limit (e.g., 'num_transactions=5')
+    Input format: num_transactions=limit (e.g., "num_transactions=5")
     """
 
     conn = None
@@ -69,8 +69,9 @@ def get_recent_transactions(input_str: str = "5", user_id: int = None):
 def create_new_transaction(input_str: str, user_id: int = None):
     """
     Creates a new transaction. 
-    All parameters (description, amount, account_id, date) MUST be present.
-    Input format: description="name", date="YYYY-MM-DD", amount=value, account_id=id (e.g., 'description="Coffee", date="2026-01-01", amount=1.50, account_id=1')
+    The parameters description and amount MUST be present.
+    The date and account_id parameters are optional.
+    Input format: description="name", amount=value, date="YYYY-MM-DD", account_id=id (e.g., "description="Coffee", amount=1.50, date="2026-01-01", account_id=1")
     """
 
     conn = None
@@ -87,27 +88,40 @@ def create_new_transaction(input_str: str, user_id: int = None):
         account_match = re.search(r'account_id=(\d+)', input_str)
 
         # Check if all matches exist
-        if not all([desc_match, date_match, amount_match, account_match]):
+        if not desc_match or not amount_match:
             missing = []
             if not desc_match: missing.append("description")
             if not amount_match: missing.append("amount")
-            if not account_match: missing.append("account_id")
-            if not date_match: missing.append("date")
             return f"Observation: Error - Missing required fields: {', '.join(missing)}."
 
         # Assign values
         description = desc_match.group(1)
         amount = float(amount_match.group(1))
         account_id = int(account_match.group(1))
-        date = date_match.group(1)
+
+        # Fallback logic for date
+        if date_match:
+            date = date_match.group(1)
+        else:
+            date = datetime.now().strftime('%Y-%m-%d')
 
         conn = get_db_connection()
         cur = conn.cursor()
 
-        # Security check to verify the account belongs to the user
-        cur.execute("SELECT id FROM accounts WHERE id = %s AND user_id = %s", (account_id, user_id))
-        if not cur.fetchone():
-            return f"Observation: Error - Account ID {account_id} does not exist or does not belong to you."
+        # Fallback logic for account_id
+        if account_match:
+            account_id = int(account_match.group(1))
+            # Security check to verify the account belongs to the user
+            cur.execute("SELECT id FROM accounts WHERE id = %s AND user_id = %s", (account_id, user_id))
+            if not cur.fetchone():
+                return f"Observation: Error - Account ID {account_id} does not exist or does not belong to you."
+        else:
+            # Find the first available account for this user
+            cur.execute("SELECT id FROM accounts WHERE user_id = %s ORDER BY id ASC LIMIT 1", (user_id,))
+            row = cur.fetchone()
+            if not row:
+                return "Observation: Error - No accounts found for this user. Cannot create transaction."
+            account_id = row[0]
         
         # Use the ML model for category prediction
         from server import model, nlp 
@@ -121,7 +135,7 @@ def create_new_transaction(input_str: str, user_id: int = None):
         new_id = cur.fetchone()[0]
         conn.commit()
         
-        return f"Observation: Success! Added transaction {new_id}: {description} (£{amount}) on {date}."
+        return f"Observation: Success! Added transaction {new_id}: {description} (£{amount}) on {date} (Account ID: {account_id})."
     
     except Exception as e:
         return f"Observation: Failed to parse or insert transaction. Error: {str(e)}"
@@ -197,7 +211,7 @@ def update_transaction_category(input_str: str, user_id: int = None):
 def delete_transaction(input_str: str, user_id: int = None):
     """
     Deletes a transaction from the database given its ID.
-    Input format: transaction_id=ID (e.g., 'transaction_id=42')
+    Input format: transaction_id=ID (e.g., "transaction_id=42")
     """
 
     conn = None

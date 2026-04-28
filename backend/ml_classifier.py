@@ -14,8 +14,8 @@ import joblib  # For saving and loading trained models
 import os
 import time
 
-from main import NLPDataProcessor
-from reader import CSVReader
+# from nlp import NLPDataProcessor
+# from reader import CSVReader
 
 class FinancialTransactionClassifier:
     """

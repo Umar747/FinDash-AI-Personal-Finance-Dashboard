@@ -3,7 +3,7 @@ import sys
 import os
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from main import NLPDataProcessor
+from backend.nlp import NLPDataProcessor
 
 # Create an instance of NLPDataProcessor for each test
 @pytest.fixture

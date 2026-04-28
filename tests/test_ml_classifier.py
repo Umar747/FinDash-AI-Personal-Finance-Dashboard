@@ -4,7 +4,7 @@ import sys
 import os
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from ml_classifier import FinancialTransactionClassifier
+from backend.ml_classifier import FinancialTransactionClassifier
 
 # Create an instance of FinancialTransactionClassifier for each test
 @pytest.fixture

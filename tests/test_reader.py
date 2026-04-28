@@ -5,7 +5,7 @@ import sys
 import os
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from reader import CSVReader
+from backend.reader import CSVReader
 
 # Create a CSVReader object for tests to read CSV files
 @pytest.fixture

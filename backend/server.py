@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 
 from database import get_db_connection
 from ml_classifier import FinancialTransactionClassifier
-from main import NLPDataProcessor
+from nlp import NLPDataProcessor
 from reader import CSVReader
 from forecast import FinancialForecaster
 
@@ -43,7 +43,7 @@ def allowed_file(filename):
 model = FinancialTransactionClassifier()
 nlp = NLPDataProcessor()
 reader = CSVReader()
-model.load_model("/Users/umarali/Library/CloudStorage/OneDrive-UniversityCollegeLondon/Third Year/Final Year Project/Personal-Finance-Dashboard/transformer_transaction_classifier.joblib")
+model.load_model("/Users/umarali/Library/CloudStorage/OneDrive-UniversityCollegeLondon/Third Year/Final Year Project/Personal-Finance-Dashboard/backend/transformer_transaction_classifier.joblib")
 
 # transactions, categories = reader.read_dataset("data/dataset.csv")
 # features = nlp.transform_embeddings(transactions)

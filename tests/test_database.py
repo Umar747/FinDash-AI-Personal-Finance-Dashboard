@@ -4,7 +4,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from database import get_db_connection
+from backend.database import get_db_connection
 
 # Environment Variables Test - Does it read from .env correctly?
 def test_db_connection_env_loading():

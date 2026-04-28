@@ -88,7 +88,7 @@ const CsvUploader = ({ onUploadSuccess, accounts }) => {
       }, 5000);
 
     } catch (err) {
-      setError(err.response?.data?.message || 'Upload failed. Please try again.');
+      setError(err.response?.data?.error || 'Upload failed. Please try again.');
       console.log(err.message)
     } finally {
       setIsUploading(false);
