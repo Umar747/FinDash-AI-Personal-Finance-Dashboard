@@ -43,7 +43,7 @@ def allowed_file(filename):
 model = FinancialTransactionClassifier()
 nlp = NLPDataProcessor()
 reader = CSVReader()
-model.load_model("/Users/umarali/Library/CloudStorage/OneDrive-UniversityCollegeLondon/Third Year/Final Year Project/Personal-Finance-Dashboard/backend/transformer_transaction_classifier.joblib")
+model.load_model(os.path.dirname(os.path.abspath(__file__)) + "/transformer_transaction_classifier.joblib")
 
 # transactions, categories = reader.read_dataset("data/dataset.csv")
 # features = nlp.transform_embeddings(transactions)

@@ -11,7 +11,7 @@ from nlp import NLPDataProcessor
 # Initialise components
 model = FinancialTransactionClassifier()
 nlp = NLPDataProcessor()
-model.load_model("/Users/umarali/Library/CloudStorage/OneDrive-UniversityCollegeLondon/Third Year/Final Year Project/Personal-Finance-Dashboard/backend/transformer_transaction_classifier.joblib")
+model.load_model(os.path.dirname(os.path.abspath(__file__)) + "/transformer_transaction_classifier.joblib")
 
 @tool
 def get_recent_transactions(input_str: str = "5", user_id: int = None):
