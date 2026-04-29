@@ -1,7 +1,6 @@
 /backend/__pycache__/
 /__pycache__
 /.pytest_cache
-backend/data
 /tests/__pycache__
 /templates
 .coverage
@@ -13,4 +12,3 @@ backend/graphs.py
 backend/test.py
 backend/todo.md
 backend/fill_database.py
-.env

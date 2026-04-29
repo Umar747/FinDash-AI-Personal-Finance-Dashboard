@@ -17,7 +17,6 @@ def sample_training_data():
     # Sample features (embeddings) - 20 samples, 5 features each
     features = np.random.rand(20, 5)
     # Sample labels for 3 categories
-    # labels = ['Travel', 'Groceries', 'Entertainment', 'Travel', 'Groceries', 'Entertainment', 'Travel', 'Groceries', 'Entertainment', 'Travel', 'Groceries', 'Entertainment', 'Travel', 'Groceries', 'Entertainment', 'Travel', 'Groceries', 'Entertainment', 'Travel', 'Groceries']
     labels = ['Entertainment', 'Groceries', 'Travel', 'Entertainment', 'Groceries', 'Travel', 'Entertainment', 'Groceries', 'Travel', 'Entertainment', 'Groceries', 'Travel', 'Entertainment', 'Groceries', 'Travel', 'Entertainment', 'Groceries', 'Travel', 'Entertainment', 'Groceries']
     return features, labels
 
@@ -27,7 +26,7 @@ def test_classifier_initialisation():
         ('svm', 'svm'),
         ('random_forest', 'random_forest'),
         ('logistic_regression', 'logistic_regression'),
-        ('SVM', 'svm'),  # Test case insensitivity
+        ('SVM', 'svm'),
         ('RaNdoM_fOreST', 'random_forest')
     ]
     
@@ -92,7 +91,7 @@ def test_training_metrics(sample_training_data):
     
     # Check metadata
     assert results['model_type'] == 'random_forest'
-    assert len(results['classes']) == 3  # Based on sample data
+    assert len(results['classes']) == 3 # Based on sample data
 
 # Data Preparation - Does _prepare_training_data work correctly?
 def test_prepare_training_data(classifier, sample_training_data):
@@ -103,14 +102,14 @@ def test_prepare_training_data(classifier, sample_training_data):
     )
     
     # Check shapes and sizes
-    assert X_train.shape[0] == 14  # 70% of 10 samples
-    assert X_test.shape[0] == 6   # 30% of 10 samples
+    assert X_train.shape[0] == 14 # 70% of 10 samples
+    assert X_test.shape[0] == 6 # 30% of 10 samples
     assert len(y_train) == 14
     assert len(y_test) == 6
     assert len(y_encoded) == 20
     
     # Check that labels are properly encoded
-    assert set(y_encoded) == {0, 1, 2}  # Should be 3 unique classes encoded as 0,1,2
+    assert set(y_encoded) == {0, 1, 2} # Should be 3 unique classes encoded as 0,1,2
 
 # Prediction - Do predictions return correct structure?
 def test_prediction_structure(classifier, sample_training_data):
@@ -187,8 +186,8 @@ def test_different_feature_types(sample_training_data):
     features, labels = sample_training_data
     size = len(labels)
     test_cases = [
-        ('embeddings', 384),  # Embeddings typically have 384 dimensions
-        ('tfidf', 1000)       # TF-IDF typically has up to 1000 features
+        ('embeddings', 384), # Embeddings typically have 384 dimensions
+        ('tfidf', 1000) # TF-IDF typically has up to 1000 features
     ]
     
     for feature_type, expected_dimension in test_cases:
@@ -227,14 +226,12 @@ def test_get_model_info(classifier, sample_training_data):
 def test_cross_validation(classifier, sample_training_data):
     features, labels = sample_training_data
     
-    # classifier = FinancialTransactionClassifier()
     results_with_cv = classifier.train(features, labels, cross_validate=True)
     results_without_cv = classifier.train(features, labels, cross_validate=False)
     
     # Check that cross-validation scores are present when enabled
     assert results_with_cv['cross_val_scores'] is not None
     assert len(results_with_cv['cross_val_scores']) == 5
-    # assert len(results_with_cv['cross_val_scores']) == 6
     
     # Check that cross-validation scores are absent when disabled
     assert results_without_cv['cross_val_scores'] is None
@@ -285,8 +282,8 @@ def test_label_encoding(classifier, sample_training_data):
     decoded = classifier.label_encoder.inverse_transform(encoded)
     print(f"Decoded is {decoded}")
     
-    assert list(encoded) == [0, 1, 2]  # Should match the encoding order
-    assert list(decoded) == test_labels  # Should decode back to original
+    assert list(encoded) == [0, 1, 2] # Should match the encoding order
+    assert list(decoded) == test_labels # Should decode back to original
 
 # Empty Input Handling - Does it handle edge cases gracefully?
 def test_empty_input_handling(classifier):

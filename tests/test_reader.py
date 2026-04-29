@@ -205,8 +205,8 @@ Netflix,"""
     assert len(transactions) == 3
     assert len(categories) == 3
     # Empty values will be read as empty strings by pandas
-    assert transactions[1] == ""  # Empty transaction
-    assert categories[2] == ""  # Empty category
+    assert transactions[1] == "" # Empty transaction
+    assert categories[2] == "" # Empty category
 
 # Case Sensitivity - Is the column name check case-sensitive?
 def test_case_sensitive_columns(reader, temp_dir):

@@ -125,16 +125,3 @@ def test_transform_tfidf_no_fit_data(processor):
     
     with pytest.raises(TypeError):
         processor.transform_tfidf(["SOME TEXT"])
-
-# # Empty Input Handling - Do methods handle empty inputs gracefully?
-# def test_empty_input_handling(processor):
-#     processor._fit_tfidf(["SAMPLE TEXT"])
-#     processor.load_embedding_model()
-    
-#     # Test TF-IDF with empty input
-#     tfidf_empty = processor.transform_tfidf([])
-#     assert tfidf_empty.shape[0] == 0
-    
-#     # Test embeddings with empty input  
-#     embeddings_empty = processor.transform_embeddings([])
-#     assert embeddings_empty.shape[0] == 0

@@ -69,7 +69,7 @@ def test_prepare_daily_series(forecaster, mock_transaction_data):
     expected_days = (mock_transaction_data['ds'].max() - mock_transaction_data['ds'].min()).days + 1
     assert len(daily) == expected_days
 
-# Forecast Accuracy & Clamping - Are the results clamped properly?
+# Forecast Accuracy and Clamping - Are the results clamped properly?
 def test_run_forecast_clamping(forecaster, mock_transaction_data):
     results = forecaster.run_forecast(mock_transaction_data)
     
