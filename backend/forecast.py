@@ -74,7 +74,7 @@ class FinancialForecaster:
                     reg_hurdle = RandomForestRegressor(n_estimators=100, max_depth=10, random_state=42)
                     reg_hurdle.fit(X_train[non_zero_mask], y_train[non_zero_mask])
 
-            # 2. Recursive Forecast Loop
+            # Recursive Forecast Loop
             current_last_income = last_income_date
             current_date = transactions_df['ds'].max()
 
@@ -114,90 +114,3 @@ class FinancialForecaster:
                     all_future_preds.append({'ds': current_date, 'amount': round(pred, 2), 'category': cat})
             
         return pd.DataFrame(all_future_preds)
-
-
-
-# # Configuration
-# base_date = datetime(2024, 1, 1)
-# num_days = 180  # Roughly 6 months
-# data = {'transaction_date': [], 'amount': [], 'category': []}
-
-# for i in range(num_days):
-#     current_date = base_date + timedelta(days=i)
-#     date_str = current_date.strftime('%Y-%m-%d')
-#     day_of_month = current_date.day
-#     is_weekend = current_date.weekday() >= 5
-
-#     # 1. INCOME: Bi-monthly paycheck
-#     if day_of_month in [1, 15]:
-#         data['transaction_date'].append(date_str)
-#         data['amount'].append(2500.00)
-#         data['category'].append("Income")
-    
-#     if random.random() > 0.95:
-#         data['transaction_date'].append(date_str)
-#         data['amount'].append(round(random.uniform(50, 5), 2))
-#         data['category'].append("Income")
-
-#     # 2. BILLS: Fixed monthly expenses (Rent/Utilities) on the 1st
-#     if day_of_month == 1:
-#         data['transaction_date'].append(date_str)
-#         data['amount'].append(random.uniform(-1300, -1100))
-#         data['category'].append("Bills")
-
-#     # 3. TRANSPORT: Daily commute (weekdays)
-#     if not is_weekend:
-#         data['transaction_date'].append(date_str)
-#         data['amount'].append(round(random.uniform(-10, -5), 2))
-#         data['category'].append("Transport")
-
-#     # 4. GROCERIES: Weekly big trip
-#     if current_date.weekday() == 6: # Sunday
-#         data['transaction_date'].append(date_str)
-#         data['amount'].append(round(random.uniform(-80, -150), 2))
-#         data['category'].append("Groceries")
-
-#     # 5. DINING & ENTERTAINMENT: On weekends
-#     if is_weekend:
-#         if random.random() > 0.3: # 70% chance to go out on weekend
-#             data['transaction_date'].append(date_str)
-#             data['amount'].append(round(random.uniform(-30, -100), 2))
-#             data['category'].append("Dining")
-        
-#         if random.random() > 0.6: # 40% chance for movies/events
-#             data['transaction_date'].append(date_str)
-#             data['amount'].append(round(random.uniform(-20, -60), 2))
-#             data['category'].append("Entertainment")
-
-#     # 6. SHOPPING & RETAIL: Random impulses
-#     if random.random() > 0.9: # 10% daily chance
-#         data['transaction_date'].append(date_str)
-#         data['amount'].append(round(random.uniform(-15, -200), 2))
-#         data['category'].append("Shopping & Retail")
-
-# # OVERALL TRENDS EXPLANATION:
-# # - Income: High-volume, low-frequency spikes appearing strictly on the 1st and 15th.
-# # - Bills: Large negative outflow at the start of every month; very low variance.
-# # - Transport: Consistent, small daily outflows with gaps on weekends.
-# # - Groceries: Periodic weekly spikes (Sundays) representing bulk shopping.
-# # - Dining/Entertainment: Clustered activity on weekends with high variance in cost.
-# # - Shopping: Highly stochastic (random) with no specific temporal pattern.
-
-
-
-# mock_df = pd.DataFrame(data)
-# print("-"*100)
-# print("INPUT DATA")
-# print(mock_df.to_string())
-# forecaster = FinancialForecaster(forecast_days=90) # Forecast next week
-
-# results = forecaster.run_forecast(mock_df)
-
-# # # print("--- Forecast Results (Sample) ---")
-# # print("-"*100)
-# # print("Forecast Results (Sample)")
-# # print(results[['ds', 'category', 'yhat']].tail(10))
-
-# print("-"*100)
-# print("ALL RESULTS")
-# print(results.to_string())

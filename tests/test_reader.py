@@ -24,10 +24,10 @@ def temp_dir():
 @pytest.fixture
 def valid_csv_data():
     return """transaction,category
-Uber ride,Transport
+Uber ride,Travel
 Supermarket,Food
 Netflix,Entertainment
-Gas station,Transport
+Gas station,Travel
 Restaurant,Food"""
 
 # Create CSV file with missing columns
@@ -58,7 +58,7 @@ def test_read_valid_csv(reader, temp_dir, valid_csv_data):
     assert len(transactions) == 5
     assert len(categories) == 5
     assert transactions == ["Uber ride", "Supermarket", "Netflix", "Gas station", "Restaurant"]
-    assert categories == ["Transport", "Food", "Entertainment", "Transport", "Food"]
+    assert categories == ["Travel", "Food", "Entertainment", "Travel", "Food"]
 
 # Error Handling - Does it raise FileNotFoundError for non-existent files?
 def test_file_not_found(reader):
@@ -116,7 +116,7 @@ def test_return_data_types(reader, temp_dir, valid_csv_data):
 def test_different_column_order(reader, temp_dir):
     # CSV with columns in different order
     csv_data = """category,transaction
-Transport,Uber ride
+Travel,Uber ride
 Food,Supermarket
 Entertainment,Netflix"""
     
@@ -127,7 +127,7 @@ Entertainment,Netflix"""
     transactions, categories = reader.read_dataset(filepath)
     
     assert transactions == ["Uber ride", "Supermarket", "Netflix"]
-    assert categories == ["Transport", "Food", "Entertainment"]
+    assert categories == ["Travel", "Food", "Entertainment"]
 
 # Large Dataset - Does it handle larger datasets correctly?
 def test_large_dataset(reader, temp_dir):
@@ -160,7 +160,7 @@ def test_special_characters(reader, temp_dir):
 "McDonald's, Inc.",Food
 "Café & Restaurant",Food
 "Movie: "Avengers"",Entertainment
-Gas $ Station,Transport'''
+Gas $ Station,Travel'''
     
     filepath = os.path.join(temp_dir, "special_chars.csv")
     with open(filepath, 'w') as f:
@@ -176,7 +176,7 @@ Gas $ Station,Transport'''
 # Whitespace Handling - Does it handle leading/trailing whitespace?
 def test_whitespace_handling(reader, temp_dir):
     csv_data = """transaction,category
-  Uber ride  ,  Transport  
+  Uber ride  ,  Travel  
 Supermarket  ,Food
   Netflix,Entertainment  """
     
@@ -187,12 +187,12 @@ Supermarket  ,Food
     transactions, categories = reader.read_dataset(filepath)
     
     assert transactions == ["  Uber ride  ", "Supermarket  ", "  Netflix"]
-    assert categories == ["  Transport  ", "Food", "Entertainment  "]
+    assert categories == ["  Travel  ", "Food", "Entertainment  "]
 
 # Empty Values - Does it handle empty values in the data?
 def test_empty_values(reader, temp_dir):
     csv_data = """transaction,category
-Uber ride,Transport
+Uber ride,Travel
 ,Food
 Netflix,"""
     
@@ -212,7 +212,7 @@ Netflix,"""
 def test_case_sensitive_columns(reader, temp_dir):
     # CSV with uppercase columns
     csv_data = """Transaction,Category
-Uber ride,Transport
+Uber ride,Travel
 Supermarket,Food"""
     
     filepath = os.path.join(temp_dir, "uppercase_columns.csv")

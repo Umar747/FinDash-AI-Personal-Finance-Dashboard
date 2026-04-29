@@ -8,7 +8,7 @@ class CSVReader:
     """
     def __init__(self):
         """
-        The constructor. This method initializes all the necessary tools and empty placeholders for models.
+        The constructor.
         """
 
     def read_dataset(self, filepath: str) -> str:
@@ -59,29 +59,3 @@ class CSVReader:
             })
 
         return data
-
-
-
-
-
-
-
-
-
-# reader = CSVReader()
-# filepath = "data/dataset.csv"
-# transactions, categories = reader.read_dataset(filepath)
-# print(transactions)
-# print(categories)
-
-# reader = CSVReader()
-# data = reader.read_statement("data/statement.csv")
-# print(data)
-# print(f"One example of the date is {data['Date'][0]}")
-# print(len(data))
-# for record in data["Name"]:
-#     print(record)
-
-# for i in range(len(data)):
-#     print(f"The transaction called {data['Name'][i]} was made on {data['Date'][i]} with an amount of {data['Amount'][i]}")
-# print(type(data["Date"][0]))

@@ -16,8 +16,7 @@ class ToolCallLogger(BaseCallbackHandler):
 # Initialise the handler
 tool_logger = ToolCallLogger()
 
-# This template is optimized for Llama 3.1. 
-# It uses a strict structure to prevent the model from repeating the question or hallucinating its own observations.
+# The template uses a strict structure to prevent the model from repeating the question or hallucinating its own observations.
 template = """You are a Personal Finance Assistant. Answer the user's question by using the tools provided.
 DO NOT repeat the original question. DO NOT hallucinate observations. 
 If you have the data from a tool, go straight to the Final Answer.
@@ -71,7 +70,7 @@ def ask_finance_agent(query: str, user_id: int):
     all_tools = bound_tools + math_tool
 
     # Bind STOP sequences. 
-    # This is the most important part for stopping loops as it prevents the LLM from writing the "Observation:" text itself.
+    # This is an important part for stopping loops because it prevents the LLM from writing the "Observation:" text itself
     llm_with_stop = llm.bind(stop=["Observation:", "Observation: ", "\nObservation:"])
 
     # Construct the ReAct agent using the LLM with the stop sequence

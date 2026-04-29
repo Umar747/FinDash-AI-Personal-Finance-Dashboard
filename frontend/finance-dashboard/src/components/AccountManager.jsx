@@ -1,4 +1,3 @@
-// src/components/AccountManager.jsx
 import React, { useState, useEffect } from 'react';
 import { FaChevronDown, FaChevronUp, FaPlus, FaTrash, FaCreditCard, FaBuilding } from 'react-icons/fa';
 import { accountsAPI } from '../services/api';
@@ -57,9 +56,6 @@ const AccountManager = ({ accounts, onAccountChange }) => {
 
     try {
       await accountsAPI.delete(accountId);
-      
-      // // Remove account from the list
-      // setAccounts(prev => prev.filter(account => account.id !== accountId));
       
       // Notify parent component to refresh the accounts state
       if (onAccountChange) {

@@ -1,7 +1,6 @@
-// src/components/CsvUploader.jsx
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { transactionsAPI } from '../services/api';
-import { FaDownload, FaUpload, FaFolderOpen, FaExclamationCircle } from "react-icons/fa";
+import { FaDownload, FaUpload, FaFolderOpen } from "react-icons/fa";
 import './CsvUploader.css';
 
 const CsvUploader = ({ onUploadSuccess, accounts }) => {
@@ -62,9 +61,9 @@ const CsvUploader = ({ onUploadSuccess, accounts }) => {
       return;
     }
 
-    // Check file size (max 10MB)
-    if (file.size > 10 * 1024 * 1024) {
-      setError('File size must be less than 10MB');
+    // Check file size (max 50MB)
+    if (file.size > 50 * 1024 * 1024) {
+      setError('File size must be less than 50MB');
       return;
     }
 
@@ -185,7 +184,7 @@ const CsvUploader = ({ onUploadSuccess, accounts }) => {
                 <span className="upload-subtext">or click to browse</span>
               </p>
               <p className="file-requirements">
-                CSV files only • Max 10MB • Supported banks: HSBC, Barclays, Santander, Monzo
+                CSV files only • Max 50MB • Supported banks: HSBC, Barclays, Santander, Monzo
               </p>
             </>
           )}

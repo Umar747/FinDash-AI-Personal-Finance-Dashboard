@@ -17,8 +17,8 @@ def sample_training_data():
     # Sample features (embeddings) - 20 samples, 5 features each
     features = np.random.rand(20, 5)
     # Sample labels for 3 categories
-    # labels = ['Transport', 'Groceries', 'Entertainment', 'Transport', 'Groceries', 'Entertainment', 'Transport', 'Groceries', 'Entertainment', 'Transport', 'Groceries', 'Entertainment', 'Transport', 'Groceries', 'Entertainment', 'Transport', 'Groceries', 'Entertainment', 'Transport', 'Groceries']
-    labels = ['Entertainment', 'Groceries', 'Transport', 'Entertainment', 'Groceries', 'Transport', 'Entertainment', 'Groceries', 'Transport', 'Entertainment', 'Groceries', 'Transport', 'Entertainment', 'Groceries', 'Transport', 'Entertainment', 'Groceries', 'Transport', 'Entertainment', 'Groceries']
+    # labels = ['Travel', 'Groceries', 'Entertainment', 'Travel', 'Groceries', 'Entertainment', 'Travel', 'Groceries', 'Entertainment', 'Travel', 'Groceries', 'Entertainment', 'Travel', 'Groceries', 'Entertainment', 'Travel', 'Groceries', 'Entertainment', 'Travel', 'Groceries']
+    labels = ['Entertainment', 'Groceries', 'Travel', 'Entertainment', 'Groceries', 'Travel', 'Entertainment', 'Groceries', 'Travel', 'Entertainment', 'Groceries', 'Travel', 'Entertainment', 'Groceries', 'Travel', 'Entertainment', 'Groceries', 'Travel', 'Entertainment', 'Groceries']
     return features, labels
 
 # Model Initialisation - Does the classifier initialise correctly?
@@ -61,7 +61,7 @@ def test_training_different_models(sample_training_data):
         assert classifier.model is not None
         assert results['model_type'] == model_type
         assert results['feature_type'] == feature_type
-        assert 'Transport' in results['classes']
+        assert 'Travel' in results['classes']
         assert 'Groceries' in results['classes']
         assert 'Entertainment' in results['classes']
 
@@ -221,7 +221,7 @@ def test_get_model_info(classifier, sample_training_data):
     assert info_after['is_trained']
     assert info_after['model_type'] == 'random_forest'
     assert info_after['num_classes'] == 3
-    assert set(info_after['classes']) == {'Transport', 'Groceries', 'Entertainment'}
+    assert set(info_after['classes']) == {'Travel', 'Groceries', 'Entertainment'}
 
 # Cross-Validation - Does cross-validation work when enabled?
 def test_cross_validation(classifier, sample_training_data):
@@ -279,7 +279,7 @@ def test_label_encoding(classifier, sample_training_data):
     classifier.train(features, labels)
     
     # Test encoding
-    test_labels = ['Entertainment', 'Groceries', 'Transport']
+    test_labels = ['Entertainment', 'Groceries', 'Travel']
     encoded = classifier.label_encoder.fit_transform(test_labels)
     print(f"Encoded is {encoded}")
     decoded = classifier.label_encoder.inverse_transform(encoded)

@@ -66,7 +66,7 @@ const Chat = () => {
                     type="text" 
                     value={input} 
                     onChange={(e) => setInput(e.target.value)}
-                    placeholder="e.g., 'What was my biggest expense last month?'"
+                    placeholder="e.g., 'What were my last 5 transactions?'"
                     disabled={isLoading}
                 />
                 <button type="submit" disabled={isLoading || !input.trim()}>

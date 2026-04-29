@@ -24,14 +24,14 @@ from finance_agent import ask_finance_agent
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
+CORS(app) # Enable CORS for all routes
 
 app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY')
 
 # Configuration
 UPLOAD_FOLDER = tempfile.gettempdir()
 ALLOWED_EXTENSIONS = {'csv'}
-MAX_FILE_SIZE = 100 * 1024 * 1024  # 100MB
+MAX_FILE_SIZE = 100 * 1024 * 1024 # 100MB
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = MAX_FILE_SIZE
@@ -44,10 +44,6 @@ model = FinancialTransactionClassifier()
 nlp = NLPDataProcessor()
 reader = CSVReader()
 model.load_model(os.path.dirname(os.path.abspath(__file__)) + "/transformer_transaction_classifier.joblib")
-
-# transactions, categories = reader.read_dataset("data/dataset.csv")
-# features = nlp.transform_embeddings(transactions)
-# model.train(features, categories)
 
 def password_check(password):
     """
@@ -71,7 +67,7 @@ def token_required(f):
         if not token:
             return jsonify({'message': 'Token is missing!'}), 401
         try:
-            # Token usually comes as "Bearer <token>"
+            # Token comes as "Bearer <token>"
             token = token.split(" ")[1]
             data = jwt.decode(token, app.config['JWT_SECRET_KEY'], algorithms=["HS256"])
             current_user_id = data['user_id']
@@ -86,14 +82,14 @@ def token_required(f):
 @app.route('/')
 def index():
     """Serve the HTML upload page"""
-    return render_template('test.html')  # If using templates folder
+    return render_template('test.html') # If using templates folder
 
 
 
 @app.route('/transactions', methods=['GET'])
 @token_required
 def get_all_transactions(current_user_id):
-    """Handle retrieving transactions database and return them"""
+    """Handle retrieving transactions from the database and return them."""
     try:
         conn = get_db_connection()
         cur = conn.cursor()
@@ -128,6 +124,7 @@ def get_all_transactions(current_user_id):
 @app.route('/transactions/<int:transaction_id>', methods=['GET'])
 @token_required
 def get_transaction(current_user_id, transaction_id):
+    """Handle retrieving a single transaction from the database and return it."""
     try:
         conn = get_db_connection()
         cur = conn.cursor()
@@ -157,6 +154,7 @@ def get_transaction(current_user_id, transaction_id):
 @app.route('/transactions', methods=['POST'])
 @token_required
 def create_transaction(current_user_id):
+    """Handle adding a single transaction to the database."""
     data = request.get_json()
 
     required_fields = [
@@ -206,7 +204,7 @@ def create_transaction(current_user_id):
 @app.route('/transactions/upload', methods=['POST'])
 @token_required
 def upload_csv(current_user_id):
-    """Handle CSV file upload and return column names"""
+    """Handle CSV file upload and return column names."""
     # Check if file was uploaded
     if 'csvFile' not in request.files:
         return jsonify({'error': 'No file part'}), 400
@@ -235,7 +233,7 @@ def upload_csv(current_user_id):
         temp_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
         file.save(temp_path)
         
-        # Read CSV with pandas
+        # Read CSV
         try:
             # Try different encodings if needed
             try:
@@ -302,6 +300,7 @@ def upload_csv(current_user_id):
 @app.route('/transactions/<int:transaction_id>', methods=['PUT'])
 @token_required
 def update_transaction(current_user_id, transaction_id):
+    """Handle updating a single transaction in the database."""
     data = request.get_json()
     
     required_fields = ['date', 'description', 'amount', 'category', 'account_id']
@@ -350,6 +349,7 @@ def update_transaction(current_user_id, transaction_id):
 @app.route('/transactions/<int:transaction_id>', methods=['DELETE'])
 @token_required
 def delete_transaction(current_user_id, transaction_id):
+    """Handle deleting a single transaction from the database."""
     try:
         conn = get_db_connection()
         cur = conn.cursor()
@@ -375,6 +375,7 @@ def delete_transaction(current_user_id, transaction_id):
 @app.route('/transactions/delete-multiple', methods=['POST'])
 @token_required
 def delete_transactions_multiple(current_user_id):
+    """Handle deleting multiple transactions from the database."""
     data = request.get_json()
     ids = data.get('ids')
 
@@ -408,7 +409,7 @@ def delete_transactions_multiple(current_user_id):
 @app.route('/accounts', methods=['GET'])
 @token_required
 def get_all_accounts(current_user_id):
-    """Handle retrieving accounts database and return them"""
+    """Handle retrieving accounts from the database and return them."""
     try:
         conn = get_db_connection()
         cur = conn.cursor()
@@ -436,6 +437,7 @@ def get_all_accounts(current_user_id):
 @app.route('/accounts/<int:account_id>', methods=['GET'])
 @token_required
 def get_account(current_user_id, account_id):
+    """Handle retrieving a single account from the database and return it."""
     try:
         conn = get_db_connection()
         cur = conn.cursor()
@@ -461,6 +463,7 @@ def get_account(current_user_id, account_id):
 @app.route('/accounts', methods=['POST'])
 @token_required
 def create_account(current_user_id):
+    """Handle adding a single account to the database and return it."""
     data = request.get_json()
 
     required_fields = ['account_name']
@@ -500,6 +503,7 @@ def create_account(current_user_id):
 @app.route('/accounts/<int:account_id>', methods=['DELETE'])
 @token_required
 def delete_account(current_user_id, account_id):
+    """Handle deleting a single account from the database."""
     try:
         conn = get_db_connection()
         cur = conn.cursor()
@@ -529,7 +533,7 @@ def delete_account(current_user_id, account_id):
 @app.route('/transactions/forecast', methods=['GET'])
 @token_required
 def generate_forecast(current_user_id):
-    """Trigger forecasting logic, save to database, and return results"""
+    """Trigger forecasting logic, save to database and return results"""
     
     try:
         # Fetch transaction data
@@ -605,6 +609,7 @@ def generate_forecast(current_user_id):
 @app.route('/api/chat', methods=['POST'])
 @token_required
 def chat_with_agent(current_user_id):
+    """Handle messages to and from the agent."""
     data = request.get_json()
     user_message = data.get('message')
     
@@ -622,6 +627,7 @@ def chat_with_agent(current_user_id):
 
 @app.route('/auth/signup', methods=['POST'])
 def signup():
+    """Handle adding user accounts to the database."""
     data = request.get_json()
     username = data.get('username')
     password = data.get('password')
@@ -650,6 +656,7 @@ def signup():
 
 @app.route('/auth/login', methods=['POST'])
 def login():
+    """Authenticate users and provide the session token."""
     data = request.get_json()
     username = data.get('username')
     password = data.get('password')
@@ -670,16 +677,3 @@ def login():
         return jsonify({'token': token, 'user_id': user[0]})
     
     return jsonify({'error': 'Incorrect username or password'}), 401
-
-
-
-# if __name__ == '__main__':
-#     # Create upload folder if it doesn't exist
-#     if not os.path.exists(UPLOAD_FOLDER):
-#         os.makedirs(UPLOAD_FOLDER)
-    
-#     print(f"Upload folder: {UPLOAD_FOLDER}")
-#     print("Starting Flask server on http://localhost:5000")
-#     print("Upload HTML page available at http://localhost:5000/")
-    
-#     app.run(debug=True, host='0.0.0.0', port=5000)

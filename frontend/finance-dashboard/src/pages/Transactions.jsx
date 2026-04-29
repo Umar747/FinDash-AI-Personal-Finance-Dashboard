@@ -1,4 +1,3 @@
-// src/pages/Transactions.jsx
 import React, { useState, useEffect } from 'react';
 import TransactionForm from '../components/TransactionForm';
 import TransactionTable from '../components/TransactionTable';
@@ -20,9 +19,9 @@ const Transactions = () => {
   });
 
   const CATEGORIES = [
-    "Income", "Transport", "Groceries", "Dining", 
+    "Income", "Travel", "Groceries", "Dining", 
     "Shopping & Retail", "Entertainment", "Bills"
-  ]; // Hardcoded categories
+  ];
 
   const fetchTransactions = async () => {
     try {
@@ -124,9 +123,6 @@ const Transactions = () => {
       search: '',
     });
   };
-
-  // Get categories for filter dropdown
-  // const categories = [...new Set(transactions.map(t => t.category))].sort();
 
   return (
     <div className="transactions-page">

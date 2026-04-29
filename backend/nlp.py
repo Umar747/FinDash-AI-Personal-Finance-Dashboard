@@ -30,9 +30,9 @@ class NLPDataProcessor:
     """
     def __init__(self):
         """
-        The constructor. This method initializes all the necessary tools and empty placeholders for models.
+        The constructor. This method initialises all the necessary tools and empty placeholders for models.
         """
-        # Configure logging INFO messages formatting
+        # Configure logging messages formatting
         logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
         self.logger = logging.getLogger(__name__)
 
@@ -79,12 +79,6 @@ class NLPDataProcessor:
         """
         Cleans and preprocesses a single transaction string.
         Returns a cleaned string of tokens.
-
-        Args:
-            text (str): The raw transaction string (e.g., "TFL TRAVEL CHRG").
-
-        Returns:
-            str: The cleaned and processed string of tokens (e.g., "tfl travel").
         """
         # Convert to lowercase
         text_original = text
@@ -107,7 +101,7 @@ class NLPDataProcessor:
             if original_word[0].isupper():
                 capitalised.add(original_words[i].lower())
         
-        # Lemmatization but preserve capitalised words
+        # Lemmatisation but preserve capitalised words
         final_tokens = []
         doc = self.nlp(" ".join(filtered_tokens))
         for token in doc:
@@ -115,7 +109,7 @@ class NLPDataProcessor:
                 # Keep the original form for capitalised words
                 final_tokens.append(token.text)
             else:
-                # Lemmatize everything else
+                # Lemmatise everything else
                 final_tokens.append(token.lemma_.lower())
         
         return " ".join(final_tokens)
@@ -124,21 +118,17 @@ class NLPDataProcessor:
         """
         Learn the vocabulary and IDF (Inverse Document Frequency) from the list of transactions.
         This must be called by `transform_tfidf()` at least once.
-
-        Args:
-            transactions (List[str]): A list of raw transaction strings.
         """
         self.logger.info("Fitting TF-IDF vectorizer...")
         
         # Preprocess the entire list of transactions
         transactions = [self._preprocess_text(text) for text in transactions]
 
-        # Initialise the TFIDFVectorizer object with the desired parameters
+        # Initialise the TFIDFVectorizer object with the parameters
         self.tfidf_vectorizer = TfidfVectorizer(
-            min_df=1,          # Ignore words that appear in fewer than 2 documents. Prunes rare typos
-            max_features=1000,  # Keep only the top 1000 most important words by term frequency
-            ngram_range=(1, 2) # Consider both single words (unigrams) and pairs of words (bigrams)
-                                # e.g., "blue" and "bottle" and also "blue_bottle"
+            min_df=1, # Ignore words that appear in fewer than 2 documents. Prunes rare typos
+            max_features=1000, # Keep only the top 1000 most important words by term frequency
+            ngram_range=(1, 2) # Consider both single words (unigrams) and pairs of words (bigrams) e.g., "blue" and "bottle" and also "blue_bottle"
         )
         # The .fit() method learns the vocabulary and the IDF from the transactions
         self.tfidf_vectorizer.fit(transactions)
@@ -147,12 +137,6 @@ class NLPDataProcessor:
     def transform_tfidf(self, texts: List[str]) -> np.ndarray:
         """
         Transform a list of raw transaction strings into a TF-IDF feature matrix.
-
-        Args:
-            texts (List[str]): List of raw transaction strings.
-
-        Returns:
-            np.ndarray: A numerical matrix of TF-IDF features.
         """
         # Check if the vectorizer has been fitted first
         if self.tfidf_vectorizer is None:
@@ -168,9 +152,6 @@ class NLPDataProcessor:
     def load_embedding_model(self, model_name: str = 'all-MiniLM-L6-v2'):
         """
         Load a pre-trained sentence embedding model.
-
-        Args:
-            model_name (str): The name of the model to load - 'all-MiniLM-L6-v2'
         """
         self.logger.info(f"Loading sentence embedding model: {model_name}...")
         # Downloads the model and sets it up
@@ -180,27 +161,13 @@ class NLPDataProcessor:
     def transform_embeddings(self, texts: List[str]) -> np.ndarray:
         """
         Transform a list of raw transaction strings into sentence embeddings.
-
-        Args:
-            texts (List[str]): List of raw transaction strings.
-
-        Returns:
-            np.ndarray: A matrix of sentence embeddings.
         """
         # If no model is loaded, load it
         if self.embedding_model is None:
             self.load_embedding_model()
 
         self.logger.info("Generating sentence embeddings...")
-        # Tokenizes and creates embeddings for each input text, then converts the results into a NumPy array
+        # Tokenizes and creates embeddings for each input text, then converts the results into a numpy array
         embeddings = self.embedding_model.encode(texts, convert_to_numpy=True)
         self.logger.info(f"Generated {embeddings.shape[0]} embeddings. Dimension: {embeddings.shape[1]}")
         return embeddings
-
-# processor = NLPDataProcessor()
-# print(processor._preprocess_text("SHOPPING"))
-# print(processor.transform_tfidf(["CARD Starbucks", "TRANSFER BARCLAYS", "Ref UPS"]))
-# print(processor.tfidf_vectorizer.get_feature_names_out())
-# check = processor.transform_tfidf(["CARD Starbucks Coffee", "TRANSFER BARCLAYS", "Ref UPS"])
-# print(check[0])
-# print(processor.transform_embeddings(["CARD Starbucks", "TRANSFER BARCLAYS", "Ref UPS"]))

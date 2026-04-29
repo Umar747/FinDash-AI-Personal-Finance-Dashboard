@@ -69,7 +69,7 @@ def get_recent_transactions(input_str: str = "5", user_id: int = None):
 def create_new_transaction(input_str: str, user_id: int = None):
     """
     Creates a new transaction. 
-    The parameters description and amount MUST be present.
+    The description and amount parameters MUST be present.
     The date and account_id parameters are optional.
     Input format: description="name", amount=value, date="YYYY-MM-DD", account_id=id (e.g., "description="Coffee", amount=1.50, date="2026-01-01", account_id=1")
     """
@@ -158,7 +158,7 @@ def update_transaction_category(input_str: str, user_id: int = None):
     cur = None
 
     try:
-        # Extract ID and Category using regex
+        # Extract id and category using regex
         id_match = re.search(r'transaction_id=(\d+)', input_str)
         cat_match = re.search(r'category=["\'](.*?)["\']', input_str)
 
@@ -171,7 +171,7 @@ def update_transaction_category(input_str: str, user_id: int = None):
         conn = get_db_connection()
         cur = conn.cursor()
 
-        # Fetch the transaction to check if it exists, who owns it, and the amount
+        # Fetch the transaction to check if it exists, who owns it and the amount
         cur.execute(
             "SELECT amount FROM transactions WHERE id = %s AND user_id = %s", 
             (transaction_id, user_id)
@@ -218,7 +218,7 @@ def delete_transaction(input_str: str, user_id: int = None):
     cur = None
 
     try:
-        # Extract the ID using regex
+        # Extract the id using regex
         match = re.search(r'transaction_id=(\d+)', input_str)
         if not match:
             # Try to find any digits if the agent didn't follow the format perfectly
@@ -262,7 +262,7 @@ def search_transactions(input_str: str, user_id: int = None):
     cur = None
 
     try:
-        # Extraction using Regex (all optional)
+        # Extraction using regex (all optional)
         cat_match = re.search(r"category=['\"](.*?)['\"]", input_str)
         name_match = re.search(r"name=['\"](.*?)['\"]", input_str)
         start_match = re.search(r"start_date=['\"](\d{4}-\d{2}-\d{2})['\"]", input_str)

@@ -1,4 +1,3 @@
-// src/components/EditTransactionBox.jsx
 import React, { useState, useEffect } from 'react';
 import './TransactionForm.css'; // Reusing existing form styles
 

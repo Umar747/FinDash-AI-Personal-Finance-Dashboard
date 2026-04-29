@@ -1,15 +1,11 @@
-// src/components/TransactionForm.jsx
 import React, { useEffect, useState } from 'react';
 import './TransactionForm.css';
 
-// Maybe use the categories stuff commented out in a future version, so user can enter category themselves if they want
-// const TransactionForm = ({ onSubmit, categories = [] }) => {
 const TransactionForm = ({ onSubmit, accounts }) => {
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     description: '',
     amount: '',
-    // category: '',
     account_id: '',
   });
 
@@ -82,9 +78,6 @@ const TransactionForm = ({ onSubmit, accounts }) => {
     }
   };
 
-  // const defaultCategories = ['Income', 'Shopping', 'Groceries', 'Transport', 'Entertainment', 'Food & Dining', 'Health & Fitness', 'Bills', 'Education', 'Other'];
-  // const allCategories = Array.from(new Set([...categories, ...defaultCategories]));
-
   return (
     <div className="transaction-form-container">
       <h3>Add New Transaction</h3>
@@ -128,20 +121,6 @@ const TransactionForm = ({ onSubmit, accounts }) => {
             />
           </div>
 
-          {/* <div className="form-group">
-            <label>Category</label>
-            <select
-              name="category"
-              value={formData.category}
-              onChange={handleChange}
-              required
-            >
-              <option value="">Select a category</option>
-              {allCategories.map(category => (
-                <option key={category} value={category}>{category}</option>
-              ))}
-            </select>
-          </div> */}
         </div>
 
         <div className="form-group">

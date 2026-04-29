@@ -1,4 +1,3 @@
-// src/components/TransactionTable.jsx
 import React, { useState, useMemo } from 'react';
 import { formatCurrency, formatDate, getCategoryColor } from '../utils/format';
 import { FaTrash, FaPencilAlt, FaChevronLeft, FaChevronRight } from "react-icons/fa";
@@ -260,7 +259,7 @@ const TransactionTable = ({
                       onClick={async () => {
                         if (window.confirm('Are you sure you want to delete this transaction?')) {
                           onDelete(transaction.id);
-                          
+
                           // Clear from selectedRows if it was checked
                           const newSelected = new Set(selectedRows);
                           newSelected.delete(transaction.id);

@@ -1,4 +1,3 @@
-// src/App.js
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
@@ -8,7 +7,7 @@ import Transactions from './pages/Transactions';
 import './App.css';
 import Insights from './pages/Insights';
 import Chat from './pages/Chat';
-import Auth from './pages/Auth'; // New Import
+import Auth from './pages/Auth';
 import './App.css';
 
 // Component to protect routes
